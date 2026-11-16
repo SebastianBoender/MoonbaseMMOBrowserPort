@@ -132,6 +132,25 @@ def insert_bytecode(code, insertions):
     return result
 
 
+def terrain_contact_guard(position, named, contact):
+    """Limit the Y-up floor workaround to makeTerrain's actual mesh footprint.
+
+    The authored mesh starts half a 600-unit cell before -19200. checkheight
+    clamps sample indices outside that mesh; its extrapolated value is useful
+    to callers but must not create an infinite collision plane.
+    """
+    minimum = encode(0x41, 2, 19500) + b'\x09'
+    condition = bytearray()
+    for axis, dimension in [('x', 'width'), ('z', 'height')]:
+        coordinate = position + named(0x61, axis)
+        maximum = (named(0x49, 'sourceMap') + named(0x61, dimension) +
+                   encode(0x41, 1, 1) + b'\x06' + encode(0x41, 2, 600) + b'\x04' + minimum + b'\x05')
+        condition.extend(coordinate + minimum + b'\x11' + coordinate + maximum + b'\x0d\x12')
+        if axis == 'z':
+            condition.extend(b'\x12')
+    return bytes(condition) + encode(0x55, 2, len(contact) + 3) + contact
+
+
 def adapt_gameplay(script, names):
     # Pin the literal used by the visibility comparison, just as the byte
     # signatures below pin the handlers. Avoid silently adapting another movie.
@@ -171,7 +190,8 @@ def adapt_gameplay(script, names):
                  body + vector_at_y(velocity, b'\x03') + named(0x62, 'linearVelocity') +
                  bytes.fromhex('4101') + named(0x50, flag))
         grounded = position + named(0x61, 'y') + height + b'\x0d' + velocity + named(0x61, 'y') + b'\x03\x0d\x12'
-        return sample + grounded + encode(0x55, 2, len(floor) + 3) + floor
+        contact = sample + grounded + encode(0x55, 2, len(floor) + 3) + floor
+        return terrain_contact_guard(position, named, contact)
     rocket = scene_ref('modelResource', 196) + named(0x61, 'emitter')
     # The existing "Particle" texture name also names the independent second
     # particle resource; textures and model resources have separate namespaces.
@@ -259,7 +279,8 @@ def adapt_gameplay(script, names):
             stopped_velocity = (ball + bv + named(0x61, 'x') + drag + b'\x04' + bounce + bv + named(0x61, 'z') + drag + b'\x04' + bytes.fromhex('4303') + named(0x57, 'vector') + named(0x62, 'linearVelocity'))
             floor = (ball + vector_at_y(bp, bh) + named(0x62, 'position') + up_speed + bounce_if_falling + resistance + stopped_velocity)
             contact = bp + named(0x61, 'y') + bh + b'\x0d' + encode(0x55, 2, len(floor) + 3) + floor
-            ball_step = (integrate + height + contact) * 8 + ball + b'\x03' + named(0x62, 'active')
+            ball_contact = terrain_contact_guard(bp, named, height + contact)
+            ball_step = (integrate + ball_contact) * 8 + ball + b'\x03' + named(0x62, 'active')
             # Snapshot existing players and their head anchors. Reading
             # globals avoids executing debug expressions on every UI poll.
             head = bytes.fromhex('41008100cd41004303') + named(0x57, 'vector')
@@ -314,7 +335,7 @@ def adapt_gameplay(script, names):
             label = 'SetupPhysics: Y-up walking contact and disable native vehicle dashpots for the cart fallback'
         elif name_id == names.index('WalkPlayer'):
             adapted = insert_bytecode(code, {0: ground_contact(walk_body, 50, 'ongroundwalk')})
-            label = 'WalkPlayer: restore Y-up ground contact and original idle braking; preserve airborne momentum'
+            label = 'WalkPlayer: finite Y-up terrain contact, original idle braking and off-map fall recovery'
         elif name_id == names.index('FramerateTest'):
             # Avoid a background-tab stall producing a multi-second Havok step
             # and one enormous steering/rocket impulse on return.
