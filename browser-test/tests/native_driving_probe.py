@@ -4,9 +4,14 @@ from pathlib import Path
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('root',type=Path,help='Original package directory (read-only)')
 parser.add_argument('--output',type=Path,required=True,help='Disposable Wine prefix and fixture output')
+parser.add_argument('--details',action='store_true',help='Also capture native centers of mass')
 parser.add_argument('--frames',type=int,default=180)
+parser.add_argument('--step-seconds',type=float,default=0.022)
+parser.add_argument('--spring-offset',type=int,default=10,help='Initial vertical separation for suspension micro-tests (0–255)')
 parser.add_argument('--input',choices=['idle','forward','reverse','left','right','brake','forward-left','forward-right','forward-brake'],default='forward')
 args=parser.parse_args()
+if not 0 < args.frames <= 10000 or not 0 < args.step_seconds <= 0.1 or not 0 <= args.spring_offset <= 255:
+ parser.error('Use 1–10000 frames and a step greater than zero, at most 0.1 seconds')
 # Require a network namespace with no external routes before running Wine.
 if any(line.split()[1] == '00000000' for line in Path('/proc/net/route').read_text().splitlines()[1:]):
  raise SystemExit('Run inside an isolated network namespace, as documented in README.md.')
@@ -19,6 +24,16 @@ movie=(root/'browser-test/public/game/moonbase.dir').read_bytes();mm=struct.unpa
 res={i:struct.unpack_from('<4sII',movie,mm+8+h+i*st) for i in range(n)}
 _,ln,off=res[1059];nd=movie[off+8:off+8+ln];cur,cnt=struct.unpack_from('>HH',nd,16);names=[]
 for _ in range(cnt):l=nd[cur];names.append(nd[cur+1:cur+1+l].decode('mac_roman'));cur+=l+1
+if args.details and 'centerOfMass' not in names:
+ names.append('centerOfMass');new=bytearray(nd[:20])
+ for name in names:
+  encoded=name.encode('mac_roman');new.extend(bytes([len(encoded)])+encoded)
+ new.extend(nd[cur:]);struct.pack_into('>H',new,18,len(names))
+ for pos in [8,12]:struct.pack_into('>I',new,pos,struct.unpack_from('>I',nd,pos)[0]+len(new)-len(nd))
+ if len(exe)%2:exe.append(0)
+ at=len(exe);exe.extend(b'manL'+struct.pack('<I',len(new))+new)
+ entry=base+mm+8+h+1059*st;struct.pack_into('<II',exe,entry+4,len(new),at)
+ struct.pack_into('<I',exe,base+4,len(exe)-base-8)
 op=lambda c,v:encode(c,1 if v<256 else 2,v)
 named=lambda c,s:op(c,names.index(s))
 def patch_handler(resource,name,code):
@@ -57,6 +72,11 @@ for i in range(count):
  rec=table+i*46;ni=struct.unpack_from('>H',script,rec)[0];sz,at=struct.unpack_from('>II',script,rec+4);handlers[names[ni]]=(i,script[at:at+sz])
 patch_handler(1077,'beginSprite',handlers['beginSprite'][1][:1134]+b'\x01')
 lc,lt=struct.unpack_from('>HI',script,78);ld=struct.unpack_from('>I',script,88)[0]
+# Preserve the original step expression while varying only its time literal.
+for i in range(lc):
+ kind,at=struct.unpack_from('>II',script,lt+8*i)
+ if kind==9 and struct.unpack_from('>d',script,ld+at+4)[0]==0.022:
+  struct.pack_into('>d',exe,base+off+8+ld+at+4,args.step_seconds)
 def literal(text):
  for i in range(lc):
   kind,at=struct.unpack_from('>II',script,lt+8*i)
@@ -77,12 +97,16 @@ for i,o in enumerate(instructions):
  # A same-size constant expression preserves all branch offsets.
  drive[start:start+7]=bytes([0x41,0 if pressed else 1,0x14,0x03,0x05,0x03,0x05])
 patch_handler(1077,'DrivePlayer',drive)
+suspension=bytearray(handlers['SetupPhysics'][1])
+assert suspension[125:127]==bytes([0x41,10])
+suspension[126]=args.spring_offset
+patch_handler(1077,'SetupPhysics',suspension)
 tick=named(0x49,'RoomNumber')
 step=tick+op(0x41,1)+b'\x05'+named(0x4f,'RoomNumber')+op(0x41,1)+named(0x50,'FrameMod')
 step+=op(0x42,0)+op(0x56,handlers['DrivePlayer'][0])+handlers['prepareFrame'][1][220:237]
 fields=[tick]
 for name in ['car','Spring']:
- for prop in ['position','linearVelocity','angularVelocity','rotation']:
+ for prop in ['position','linearVelocity','angularVelocity','rotation']+(['centerOfMass'] if args.details else []):
   fields.append(body(name)+named(0x61,prop)+op(0x43,1)+named(0x57,'string'))
 content=b''.join(fields)+op(0x43,len(fields))+b'\x1e'
 step+=named(0x49,'gmultiuserinstance')+literal('car')+literal('car')+content+op(0x42,4)+named(0x67,'sendNetMessage')
@@ -129,7 +153,7 @@ try:
   for i in range(args.frames):
    head=read(c,6);packet=read(c,struct.unpack('!I',head[2:])[0]);sample=parse_packet(packet);samples.append(sample)
    if i%30==0:print(json.dumps(sample),flush=True)
-  (out/'driving-results.json').write_text(json.dumps({'input':args.input,'dt':0.022,'samples':samples},indent=2)+'\n')
+  (out/'driving-results.json').write_text(json.dumps({'input':args.input,'dt':args.step_seconds,'details':args.details,'spring_offset':args.spring_offset,'samples':samples},indent=2)+'\n')
 finally:
  p.terminate();listener.close();log.close()
  subprocess.run(['wineserver','-k'],env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)

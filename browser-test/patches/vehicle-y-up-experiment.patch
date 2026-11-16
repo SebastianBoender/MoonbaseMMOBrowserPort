@@ -1,0 +1,184 @@
+--- a/vm-rust/src/player/handlers/datum_handlers/cast_member/havok_physics.rs
++++ b/vm-rust/src/player/handlers/datum_handlers/cast_member/havok_physics.rs
+@@ -1293,6 +1293,7 @@
+ /// Apply linear dashpot forces.
+ /// From x86: sub_1001CAF0 — timeScale = dt * 151.0, direct impulse application.
+ fn apply_linear_dashpots(state: &mut HavokPhysicsState, dt: f64) {
++    let moonbase = is_moonbase_vehicle_scene(state);
+     let time_scale = dt * 151.0;
+     let post_damping = 0.001;
+     for di in 0..state.linear_dashpots.len() {
+@@ -1308,9 +1309,9 @@
+         let idx_a = match find_body_idx(state, rb_a_name) { Some(i) => i, None => continue };
+         let idx_b = rb_b_name.as_ref().and_then(|n| find_body_idx(state, *n));
+ 
+-        let world_a = body_transform_point(&state.rigid_bodies[idx_a], point_a_local);
++        let world_a = dashpot_anchor(&state.rigid_bodies[idx_a], point_a_local, moonbase);
+         let (world_b, vel_b) = if let Some(ib) = idx_b {
+-            (body_transform_point(&state.rigid_bodies[ib], point_b_local), state.rigid_bodies[ib].linear_velocity)
++            (dashpot_anchor(&state.rigid_bodies[ib], point_b_local, moonbase), state.rigid_bodies[ib].linear_velocity)
+         } else {
+             (point_b_local, [0.0; 3])
+         };
+@@ -1324,10 +1325,11 @@
+             let rb = &mut state.rigid_bodies[idx_a];
+             if !rb.pinned && rb.inverse_mass > 0.0 {
+                 let neg = v3_neg(force);
+-                let impulse = v3_scale(neg, rb.inverse_mass);
++                let impulse = if moonbase { neg } else { v3_scale(neg, rb.inverse_mass) };
+                 // ApplyImpulseAtPoint
+                 rb.linear_velocity = v3_add(rb.linear_velocity, v3_scale(impulse, rb.inverse_mass));
+-                let r = v3_sub(world_a, rb.position);
++                let center = if moonbase { body_transform_point(rb, rb.center_of_mass) } else { rb.position };
++                let r = v3_sub(world_a, center);
+                 let t = v3_cross(r, impulse);
+                 rb.angular_velocity = v3_add(rb.angular_velocity, mat3_transform(world_inv_inertia(rb), t));
+                 // Post damping: vel *= (1 - 0.001)
+@@ -1340,9 +1342,10 @@
+         if let Some(ib) = idx_b {
+             let rb = &mut state.rigid_bodies[ib];
+             if !rb.pinned && rb.inverse_mass > 0.0 {
+-                let impulse = v3_scale(force, rb.inverse_mass);
++                let impulse = if moonbase { force } else { v3_scale(force, rb.inverse_mass) };
+                 rb.linear_velocity = v3_add(rb.linear_velocity, v3_scale(impulse, rb.inverse_mass));
+-                let r = v3_sub(world_b, rb.position);
++                let center = if moonbase { body_transform_point(rb, rb.center_of_mass) } else { rb.position };
++                let r = v3_sub(world_b, center);
+                 let t = v3_cross(r, impulse);
+                 rb.angular_velocity = v3_add(rb.angular_velocity, mat3_transform(world_inv_inertia(rb), t));
+                 let factor = 1.0 - post_damping;
+@@ -1496,6 +1499,21 @@
+     state.rigid_bodies.iter().position(|rb| rb.name == name)
+ }
+ 
++// Restricted to Moonbase's authored Y-up rigid-body vehicle; other movies
++// retain their existing emulator path while the native comparisons run.
++fn is_moonbase_vehicle_scene(state: &HavokPhysicsState) -> bool {
++    state.gravity[1].abs() > state.gravity[2].abs()
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"))
++}
++
++// The original Xtra uses the COM for a zero dashpot anchor, but model-local
++// coordinates for a nonzero one. Verified with the native Car/Spring traces.
++fn dashpot_anchor(rb: &crate::player::cast_member::HavokRigidBody, point: V3, native: bool) -> V3 {
++    let local = if native && point == [0.0; 3] { rb.center_of_mass } else { point };
++    body_transform_point(rb, local)
++}
++
+ /// Transform a body-local point to world space.
+ fn body_transform_point(rb: &crate::player::cast_member::HavokRigidBody, local_point: V3) -> V3 {
+     v3_add(quat_rotate_v(rb.orientation, local_point), rb.position)
+@@ -1525,6 +1543,23 @@
+ const MAX_BISECTION_RETRIES: usize = 30;
+ 
+ pub fn step_native(state: &mut HavokPhysicsState, time_increment: f64, num_sub_steps: i32) {
++    // Experimental Moonbase path: the world is Y-up. The generic Z-up
++    // safety floor and rolling-ball constraint must not reposition the cart.
++    let moonbase = state.gravity[1].abs() > state.gravity[2].abs()
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"));
++    if moonbase {
++        state.use_ground_constraint = false;
++        for b in &mut state.rigid_bodies {
++            if b.name.as_str().eq_ignore_ascii_case("Car") || b.name.as_str().eq_ignore_ascii_case("Spring") {
++                b.active = true;
++                b.driven = false;
++                b.is_box = true;
++                b.resting_normal = None;
++            }
++        }
++    }
++
+     let n_subs = num_sub_steps.max(1) as usize;
+     let sub_dt = time_increment / n_subs as f64;
+ 
+@@ -1669,7 +1704,7 @@
+     // resting contacts, deactivator) so the crutch can go entirely; see the abandoned
+     // faithful solver in Desktop\havok\"havok_physics copy.rs".
+     const ANGULAR_DRIFT_DAMP: f64 = 0.1; //0.05;
+-    let ang_factor = 1.0 - ANGULAR_DRIFT_DAMP;
++    let ang_factor = if moonbase { 1.0 } else { 1.0 - ANGULAR_DRIFT_DAMP };
+     for rb in &mut state.rigid_bodies {
+         if rb.pinned || !rb.active { continue; }
+         rb.angular_velocity[0] *= ang_factor;
+@@ -1734,10 +1769,13 @@
+     // bodies on ANY collision, which for a pile of resting bodies starves the
+     // simulation of time and freezes it. Bisection stays on for driven scenes
+     // (the SuperSonic car was tuned against it).
+-    let passive = state.springs.is_empty()
++    let moonbase = state.gravity[1].abs() > state.gravity[2].abs()
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"));
++    let passive = moonbase || (state.springs.is_empty()
+         && state.linear_dashpots.is_empty()
+         && state.angular_dashpots.is_empty()
+-        && !state.rigid_bodies.iter().any(|rb| rb.driven);
++        && !state.rigid_bodies.iter().any(|rb| rb.driven));
+ 
+     while remaining > MIN_BISECTION_DT * 0.1 {
+         // Phase 1: Save state for rollback
+@@ -1747,18 +1785,20 @@
+             }
+         }
+ 
+-        // Phase 2: Apply gravity
+-        apply_gravity(state);
+-
+-        // Phase 3: Apply actions (drag, springs, dashpots)
++        // Native Moonbase traces use the previous velocity for position;
++        // dashpot impulses are applied after integration. A newly created
++        // world has no gravity contribution on its first step.
++        if !moonbase || state.sim_time > 0.0 { apply_gravity(state); }
+         apply_drag(state);
+         apply_springs(state, remaining);
+-        apply_linear_dashpots(state, remaining);
+-        apply_angular_dashpots(state, remaining);
+-
+-        // Phase 4: Integrate all bodies (Forward Euler with quaternion)
+-        for rb in &mut state.rigid_bodies {
+-            integrate_body(rb, remaining);
++        if !moonbase {
++            apply_linear_dashpots(state, remaining);
++            apply_angular_dashpots(state, remaining);
++        }
++        for rb in &mut state.rigid_bodies { integrate_body(rb, remaining); }
++        if moonbase {
++            apply_linear_dashpots(state, remaining);
++            apply_angular_dashpots(state, remaining);
+         }
+ 
+         // Phase 4a: Cable / point-to-point constraints (pendulum hang+swing).
+@@ -2188,9 +2228,12 @@
+     // SuperSonic-style scenes register dashpots/springs and instead drive
+     // ground contact from Lingo hover forces, so for those we keep skipping the
+     // upward-facing static-ground contacts (handled by the ground constraint).
+-    let passive_scene = state.springs.is_empty()
++    let moonbase = state.gravity[1].abs() > state.gravity[2].abs()
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
++        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"));
++    let passive_scene = moonbase || (state.springs.is_empty()
+         && state.linear_dashpots.is_empty()
+-        && state.angular_dashpots.is_empty();
++        && state.angular_dashpots.is_empty());
+ 
+     for bi in 0..state.rigid_bodies.len() {
+         let rb = &state.rigid_bodies[bi];
+@@ -2209,7 +2252,7 @@
+         // box — a car chassis is far thinner than its box, whose corners otherwise
+         // ram a rising loop wall the real hull clears. Everything else keeps the
+         // box-support narrow phase it was tuned against.
+-        let contacts = if rb.received_force && !rb.collision_hull_local.is_empty() {
++        let contacts = if (rb.received_force || moonbase) && !rb.collision_hull_local.is_empty() {
+             let hull_world: Vec<V3> = rb.collision_hull_local.iter()
+                 .map(|l| v3_add(rb.position, quat_rotate_v(rb.orientation, *l)))
+                 .collect();
+@@ -2263,7 +2306,7 @@
+     // Dynamic body vs dynamic body (axis-aligned box approximation) — passive
+     // scenes only. This is what keeps a stack of crates standing. SuperSonic-
+     // style scenes have no dynamic-vs-dynamic stacks and were tuned without it.
+-    if passive_scene {
++    if passive_scene && !moonbase {
+         all_contacts.extend(detect_body_body_collisions(state));
+     }
+ 
