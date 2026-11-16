@@ -61,3 +61,5 @@ Native name typing was visibly verified at 4K quality after fixing legacy text c
 Representative local draw-cadence samples were about 50 fps at Original and 4K, with p95 around 27–28 ms and no >50 ms intervals in those 240-sample windows. These are observations on one machine, not a cross-device performance guarantee. Physical mobile keyboards/touch, other browser engines, low-memory GPU behavior, and full multiplayer/vehicle regression sessions remain manual validation limits. Gravity pointer conversion is covered by geometry tests; a physical slider drag should be included in device testing.
 
 Screenshots and detailed session samples are local ignored verification artifacts: `verification/modern-client-4k.png`, `verification/modern-4k-name-entry.png`, and `verification/modern-final-checks.json`.
+
+After the separate chat interoperability commit (`1f8a658`) landed, the combined main branch passed 20 Python tests and all 29 JavaScript tests; the final combined deployment archive built successfully and includes `chat_protocol.py`.
