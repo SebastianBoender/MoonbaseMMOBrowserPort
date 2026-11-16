@@ -29,3 +29,8 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement) releaseAll(); });
 })();
+
+// Escape also exits the in-page fullscreen fallback when the iframe has focus.
+addEventListener('keydown', event => {
+  if (event.key === 'Escape') parent.postMessage({type:'moonbase-exit-fullscreen'}, location.origin);
+});

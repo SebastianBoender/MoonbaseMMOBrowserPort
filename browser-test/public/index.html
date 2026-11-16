@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
   <script src="/touch-controls.js" defer></script>
+  <script src="/fullscreen.js" defer></script>
 </head>
 <body>
   <div class="site-wrap">
@@ -43,7 +44,7 @@
             <label class="touch-toggle"><input type="checkbox" id="touch-toggle"> Touch controls</label>
           </section>
           <div id="play-surface">
-          <button id="exit-fullscreen" type="button">Exit fullscreen</button>
+          <div class="fullscreen-tools"><button id="fullscreen-touch" type="button" aria-pressed="false">Touch controls</button><button id="exit-fullscreen" type="button">Exit fullscreen</button></div>
           <section class="stage-shell" aria-label="Moonbase game">
             <div id="placeholder"><div class="welcome-moon" aria-hidden="true"></div><p class="welcome-kicker">YOUR NEXT SMALL STEP</p><h2>Welcome back to the Moon.</h2><p>Select <strong>Play Moon Base</strong>, then click Play inside the player.</p><p class="welcome-caption">Original world. Familiar faces. A little nostalgia.</p></div>
             <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>

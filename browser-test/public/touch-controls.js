@@ -49,6 +49,7 @@
   toggle.addEventListener('change', () => { userPreference = true; visible(); });
   for (const event of ['blur','pagehide','orientationchange']) addEventListener(event, releaseAll);
   document.addEventListener('fullscreenchange', releaseAll);
+  document.addEventListener('moonbase-fullscreenchange', releaseAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   panel.addEventListener('focusin', event => { if (event.target.matches('input')) releaseAll(); });
   // Heartbeats keep held keys alive; the iframe releases them if this parent
