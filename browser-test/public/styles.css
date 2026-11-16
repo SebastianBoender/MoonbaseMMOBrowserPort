@@ -647,3 +647,38 @@ footer{
     scroll-behavior:auto
   }
 }
+
+/* Native-size touch controls live outside the scaled original game. */
+.touch-toggle { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; min-height:44px; cursor:pointer; }
+.touch-controls { padding:12px 8px; margin-top:12px; background:#261909; border:1px solid #8b672f; }
+#touch-status { font-size:12px; color:#e7c985; margin:0 0 10px; }
+.touch-pad-row { display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px; max-width:390px; margin:auto; }
+.direction-pad { display:grid; grid-template:repeat(3,44px)/repeat(3,44px); gap:4px; }
+.direction-pad button { padding:0; font-size:24px; }
+.pad-up { grid-area:1/2; }.pad-left { grid-area:2/1; }.pad-center { grid-area:2/2; text-align:center; align-self:center; color:#9b753b; }.pad-right { grid-area:2/3; }.pad-down { grid-area:3/2; }
+.touch-actions { display:grid; grid-template-columns:repeat(2,minmax(44px,1fr)); grid-template-rows:repeat(2,minmax(44px,1fr)); gap:4px; }
+.touch-actions button { padding:4px 2px; font-size:12px; }
+[data-game-key] { touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+[data-game-key].held { background:#c49c4f; color:#211203; box-shadow:inset 1px 2px 5px #241300; }
+.touch-utilities { display:flex; align-items:center; gap:12px; margin-top:10px; }
+.touch-utilities button,#touch-enter { min-height:44px; }
+.touch-utilities span,.touch-form small { font-size:11px; color:#c8ab75; }
+#touch-enter { display:block; width:100%; margin-bottom:10px; }
+.touch-form { margin:10px 0; }
+.touch-form label { display:block; font-size:13px; margin-bottom:5px; }
+.touch-form>div { display:flex; gap:6px; flex-wrap:wrap; }
+.touch-form input { min-width:0; flex:1 1 100px; padding:9px; font:16px Arial,sans-serif; background:#100c06; border:1px solid #a68346; color:#ffe5ad; }
+.touch-form button { min-height:44px; padding:7px 9px; font-size:12px; }
+.touch-form small { display:block; margin-top:6px; }
+#play-surface:fullscreen { background:#000; padding:8px; display:flex; flex-direction:column; gap:8px; overflow:auto; }
+#play-surface:fullscreen .stage-shell { flex:1 1 auto; min-height:120px; aspect-ratio:auto; }
+#play-surface:fullscreen .touch-controls { flex:0 0 auto; width:100%; margin:0; }
+@media(orientation:landscape) and (max-height:600px) {
+  #play-surface:fullscreen:has(.touch-controls:not([hidden])) { display:grid; grid-template-columns:minmax(0,1fr) 260px; }
+  #play-surface:fullscreen .stage-shell { height:100%; min-height:0; }
+  #play-surface:fullscreen .touch-controls { height:100%; overflow:auto; }
+}
+
+#exit-fullscreen{display:none}
+#play-surface:fullscreen #exit-fullscreen{display:block;position:absolute;top:10px;right:10px;z-index:100;padding:6px 10px;min-height:44px}
+#play-surface:fullscreen .touch-controls{padding-top:52px}

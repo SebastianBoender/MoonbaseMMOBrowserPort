@@ -8,6 +8,14 @@
   const status = panel.querySelector('#chat-status'), form = panel.querySelector('#chat-form');
   let lastSequence = 0, polling = false, sending = false;
   const history = [];
+  window.moonbaseChat = {
+    async submit(text) {
+      if (sending) return {sent:false, message:'Chat is sending. Try again in a moment.'};
+      input.value = text;
+      await sendMessage();
+      return {sent:input.value === '', message:status.textContent};
+    }
+  };
   function openChat() { input.focus(); }
   function returnToGame() {
     input.blur();

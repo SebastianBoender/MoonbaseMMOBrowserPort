@@ -83,7 +83,7 @@ $('traceworld').addEventListener('click', () => {
   launch('world');
   addEvent({level:'info',message:'World trace: click Play; startup will connect and pause if logout is called.'});
 });
-$('fullscreen').addEventListener('click', () => $('game').requestFullscreen().catch(error => addEvent({ level:'error', message:String(error) })));
+$('fullscreen').addEventListener('click', () => $('play-surface').requestFullscreen().catch(error => addEvent({ level:'error', message:String(error) })));
 $('download').addEventListener('click', async () => {
   const status = await fetch('/api/status').then(r => r.json()).catch(() => ({}));
   const blob = new Blob([JSON.stringify({ status, events }, null, 2)], { type: 'application/json' });
@@ -96,3 +96,5 @@ $('runlingo').addEventListener('click', () => {
   if ($('game').hidden) return;
   $('game').contentWindow.postMessage({type:'moonbase-lingo', source:$('lingo').value}, location.origin);
 });
+
+$('exit-fullscreen').addEventListener('click', () => document.exitFullscreen().catch(error => addEvent({ level:'error', message:String(error) })));

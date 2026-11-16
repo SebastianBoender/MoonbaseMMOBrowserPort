@@ -7,6 +7,7 @@
   <title>Moon Base · A nostalgic browser revival</title>
   <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
+  <script src="/touch-controls.js" defer></script>
 </head>
 <body>
   <div class="site-wrap">
@@ -39,13 +40,37 @@
             <button id="start" class="primary">Play Moon Base</button>
             <button id="reload" disabled>Restart</button>
             <button id="fullscreen" disabled>Fullscreen</button>
+            <label class="touch-toggle"><input type="checkbox" id="touch-toggle"> Touch controls</label>
           </section>
+          <div id="play-surface">
+          <button id="exit-fullscreen" type="button">Exit fullscreen</button>
           <section class="stage-shell" aria-label="Moonbase game">
             <div id="placeholder"><div class="welcome-moon" aria-hidden="true"></div><p class="welcome-kicker">YOUR NEXT SMALL STEP</p><h2>Welcome back to the Moon.</h2><p>Select <strong>Play Moon Base</strong>, then click Play inside the player.</p><p class="welcome-caption">Original world. Familiar faces. A little nostalgia.</p></div>
             <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>
           </section>
+          <section id="touch-controls" class="touch-controls" aria-label="Touch game controls" hidden>
+            <p id="touch-status" role="status">Launch the game, then tap Play inside the player.</p>
+            <form id="touch-name-form" class="touch-form" hidden><label for="touch-name">Character name</label><div><input id="touch-name" maxlength="20" autocomplete="nickname" autocapitalize="off" spellcheck="false" required><button type="submit">Set name</button></div><small>Then tap Login in the game. Review the original terms there.</small></form>
+            <button id="touch-enter" class="primary" hidden>Enter Base</button>
+            <div class="touch-pad-row">
+              <div class="direction-pad" role="group" aria-label="Movement">
+                <button disabled data-game-key="forward" class="pad-up" aria-label="Move forward">↑</button>
+                <button disabled data-game-key="left" class="pad-left" aria-label="Turn left">←</button>
+                <span class="pad-center" aria-hidden="true">✦</span>
+                <button disabled data-game-key="right" class="pad-right" aria-label="Turn right">→</button>
+                <button disabled data-game-key="back" class="pad-down" aria-label="Move backward">↓</button>
+              </div>
+              <div class="touch-actions" role="group" aria-label="Game actions">
+                <button disabled data-game-key="jetpack">Jetpack</button><button disabled data-game-key="dance">Dance</button>
+                <button disabled data-game-key="brake">Brake</button><button disabled data-game-key="exit">Exit car</button>
+              </div>
+            </div>
+            <div class="touch-utilities"><button id="touch-chat-toggle" disabled>Chat</button><span>Hold to move. Use two fingers to move and fly.</span></div>
+            <form id="touch-chat-form" class="touch-form" hidden><label for="touch-chat">Message</label><div><input id="touch-chat" maxlength="200" autocomplete="off" enterkeyhint="send" spellcheck="false"><button id="touch-send" type="submit">Send</button><button id="touch-chat-close" type="button">Close</button></div><small id="touch-chat-status" role="status"></small></form>
+          </section>
+          </div>
           <div class="status-line"><span id="status" role="status">Ready when you are.</span><span>MULTIPLAYER · SERVER BY HEATH</span></div>
-          <p class="player-hint">Click inside the game to use your keyboard. A desktop keyboard is recommended; turn your phone sideways for a larger view.</p>
+          <p class="player-hint">Use your keyboard or turn on Touch controls. On phones, landscape and Fullscreen give you more room.</p>
         </section>
         <section class="article-section" id="how-to-play" aria-labelledby="controls-heading">
           <h2 id="controls-heading">A quick refresher</h2>
