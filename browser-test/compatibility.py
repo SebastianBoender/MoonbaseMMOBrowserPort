@@ -228,6 +228,38 @@ def adapt_gameplay(script, names):
             vehicle_step += spring + car + named(0x61, 'rotation') + named(0x62, 'rotation')
             for body in [car, spring]:
                 vehicle_step += body + b'\x03' + named(0x62, 'active')
+            # The native ball still uses Z-up collision contacts. Keep original
+            # kick impulses, then integrate against the original Y-up terrain.
+            # Eight small steps bound travel per floor query even after a stall.
+            ball = named(0x49, 'browserBall')
+            bp = ball + named(0x61, 'position')
+            bv = ball + named(0x61, 'linearVelocity')
+            bh = named(0x49, 'browserBallHeight')
+            bounce = named(0x49, 'browserBallBounce')
+            drag = named(0x49, 'browserBallDrag')
+            speed = named(0x49, 'browserBallSpeed')
+            sub_dt = dt + bytes.fromhex('410807')
+            def distance_from_zero(value):
+                return value + zero + bytes.fromhex('4302') + named(0x67, 'distanceTo')
+            measure = distance_from_zero(bv) + named(0x4f, 'browserBallSpeed')
+            limit = ball + bv + encode(0x41, 2, 700) + speed + b'\x07\x04' + named(0x62, 'linearVelocity')
+            cap_speed = measure + speed + encode(0x41, 2, 700) + b'\x10' + encode(0x55, 2, len(limit) + 3) + limit
+            gravity = named(0x49, 'havok') + named(0x61, 'gravity')
+            integrate = (ball + bv + gravity + sub_dt + b'\x04\x05' + named(0x62, 'linearVelocity') + cap_speed +
+                         ball + bp + bv + sub_dt + b'\x04\x05' + named(0x62, 'position'))
+            height = bp + b'\x03' + bytes.fromhex('4302') + named(0x57, 'checkheight') + bytes.fromhex('415005') + named(0x4f, 'browserBallHeight')
+            # Correct penetration in either direction, but only bounce a real
+            # downward impact. Small impacts settle rather than gaining energy.
+            up_speed = b'\x03' + bv + named(0x61, 'y') + bytes.fromhex('4302') + named(0x57, 'max') + named(0x4f, 'browserBallBounce')
+            rebound = bv + named(0x61, 'y') + b'\x09' + ball + named(0x61, 'restitution') + b'\x04' + named(0x4f, 'browserBallBounce')
+            bounce_if_falling = bv + named(0x61, 'y') + bytes.fromhex('410a090c') + encode(0x55, 2, len(rebound) + 3) + rebound
+            horizontal_speed = bytes.fromhex('4101') + distance_from_zero(vector_at_y(bv, b'\x03')) + bytes.fromhex('4302') + named(0x57, 'max')
+            # Coulomb friction: remove at most mu * |g| * dt from ground speed.
+            resistance = (b'\x03' + bytes.fromhex('4101') + ball + named(0x61, 'friction') + distance_from_zero(gravity) + b'\x04' + sub_dt + b'\x04' + horizontal_speed + b'\x07\x06' + bytes.fromhex('4302') + named(0x57, 'max') + named(0x4f, 'browserBallDrag'))
+            stopped_velocity = (ball + bv + named(0x61, 'x') + drag + b'\x04' + bounce + bv + named(0x61, 'z') + drag + b'\x04' + bytes.fromhex('4303') + named(0x57, 'vector') + named(0x62, 'linearVelocity'))
+            floor = (ball + vector_at_y(bp, bh) + named(0x62, 'position') + up_speed + bounce_if_falling + resistance + stopped_velocity)
+            contact = bp + named(0x61, 'y') + bh + b'\x0d' + encode(0x55, 2, len(floor) + 3) + floor
+            ball_step = (integrate + height + contact) * 8 + ball + b'\x03' + named(0x62, 'active')
             # Snapshot existing players and their head anchors. Reading
             # globals avoids executing debug expressions on every UI poll.
             head = bytes.fromhex('41008100cd41004303') + named(0x57, 'vector')
@@ -253,8 +285,8 @@ def adapt_gameplay(script, names):
             start_particles = b''.join(emitter + bytes.fromhex('4114') + named(0x62, 'numParticles') for emitter in (rocket, rocket_right))
             snapshot.extend(rocket + named(0x61, 'loop') + encode(0x55, 2, len(start_particles) + 3) + start_particles)
             assert code[-1:] == b'\x01'
-            adapted = insert_bytecode(code, {0: park_if_idle + contacts, 220: vehicle_step, len(code) - 1: bytes(snapshot)})
-            label = 'prepareFrame: Y-up cart fallback, nameplates and original twin jetpack emitters'
+            adapted = insert_bytecode(code, {0: park_if_idle + contacts, 220: vehicle_step + ball_step, len(code) - 1: bytes(snapshot)})
+            label = 'prepareFrame: Y-up cart and soccer ball, nameplates and original twin jetpack emitters'
         elif name_id == names.index('MakeRocketPack'):
             assert size == 359 and code[44:48] == bytes.fromhex('492244c4')
             assert code[287:291] == bytes.fromhex('492244d5')
@@ -276,6 +308,7 @@ def adapt_gameplay(script, names):
             # actions when the seat follows the chassis in the Y-up fallback.
             for kind, constraint in [('linearDashpot', 'mydashpot'), ('angularDashpot', 'myandashpot')]:
                 disable += named(0x49, 'havok') + literal_for(constraint) + bytes.fromhex('4302') + named(0x67, kind) + b'\x03' + named(0x62, 'strength')
+            disable += body_ref('TheBall') + named(0x4f, 'browserBall')
             assert code[-1:] == b'\x01'
             adapted = insert_bytecode(code, {len(code) - 1: disable})
             label = 'SetupPhysics: Y-up walking contact and disable native vehicle dashpots for the cart fallback'
@@ -450,7 +483,7 @@ def prepare(root):
         cursor += 1 + length
     names.append('getNetMessage')
     names.append('puppet')
-    names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay', 'browserGroundHeight', 'browserCartYaw'])
+    names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay', 'browserGroundHeight', 'browserCartYaw', 'browserBall', 'browserBallHeight', 'browserBallBounce', 'browserBallDrag', 'browserBallSpeed'])
     for name in ['getAt', 'region']:
         if name not in names:
             names.append(name)

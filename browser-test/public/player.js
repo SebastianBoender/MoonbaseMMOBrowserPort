@@ -71,7 +71,7 @@
         let samples = 0;
         const trace = setInterval(async () => {
           const values = {};
-          for (const expression of ['the controlDown + 0', 'browserGameplay.FrameMod + 0', 'moongravity + 0', 'sp.modelResource("RocketPack").emitter.loop + 0', ...['Walk', 'Car', 'Spring'].flatMap(body => [`havok.rigidBody("${body}").position`, `havok.rigidBody("${body}").linearVelocity`])]) {
+          for (const expression of ['the controlDown + 0', 'browserGameplay.FrameMod + 0', 'moongravity + 0', 'sp.modelResource("RocketPack").emitter.loop + 0', 'checkheight(havok.rigidBody("TheBall").position, 0)', ...['Walk', 'Car', 'Spring', 'TheBall'].flatMap(body => [`havok.rigidBody("${body}").position`, `havok.rigidBody("${body}").linearVelocity`])]) {
             try { values[expression] = JSON.parse(await vm.mcp_eval_lingo(expression)); }
             catch (error) { values[expression] = serialize(error); }
           }
