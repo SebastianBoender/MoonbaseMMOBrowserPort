@@ -48,6 +48,7 @@
   mobile.addEventListener('change', auto); auto();
   toggle.addEventListener('change', () => { userPreference = true; visible(); });
   for (const event of ['blur','pagehide','orientationchange']) addEventListener(event, releaseAll);
+  document.addEventListener('moonbase-controlsrelease', releaseAll);
   document.addEventListener('fullscreenchange', releaseAll);
   document.addEventListener('moonbase-fullscreenchange', releaseAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });

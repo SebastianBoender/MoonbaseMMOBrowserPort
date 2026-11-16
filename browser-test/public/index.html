@@ -1,8 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#120b02">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Moon Base">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/moonbase-192.png">
   <meta name="description" content="Return to Moon Base, the classic Maid Marian multiplayer game. An unofficial browser port made for nostalgia, with a server hosted by Heath from Discord.">
   <title>Moon Base · A nostalgic browser revival</title>
   <link rel="stylesheet" href="/styles.css">
@@ -49,7 +54,7 @@
             <label class="touch-toggle"><input type="checkbox" id="touch-toggle"> Touch controls</label>
           </section>
           <div id="play-surface">
-          <div class="fullscreen-tools"><label id="fullscreen-quality" hidden>Quality <select id="fullscreen-resolution" aria-label="Fullscreen render resolution"></select><span id="fullscreen-render-status" role="status"></span></label><button id="fullscreen-touch" type="button" aria-pressed="false">Touch controls</button><button id="exit-fullscreen" type="button">Exit fullscreen</button></div>
+          <div class="fullscreen-tools"><button id="fullscreen-menu-toggle" type="button" aria-label="Game menu" aria-expanded="false" aria-controls="fullscreen-menu">☰</button><div id="fullscreen-menu" hidden><label id="fullscreen-quality" hidden>Quality <select id="fullscreen-resolution" aria-label="Fullscreen render resolution"></select><span id="fullscreen-render-status" role="status"></span></label><button id="fullscreen-touch" type="button" aria-pressed="false">Touch controls</button><button id="exit-fullscreen" type="button">Exit fullscreen</button></div></div>
           <section class="stage-shell" aria-label="Moonbase game">
             <div id="placeholder"><div class="welcome-moon" aria-hidden="true"></div><p class="welcome-kicker">YOUR NEXT SMALL STEP</p><h2>Welcome back to the Moon.</h2><p>Select <strong>Play Moon Base</strong>, then click Play inside the player.</p><p class="welcome-caption">Original world. Familiar faces. A little nostalgia.</p></div>
             <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>
@@ -76,7 +81,7 @@
           </section>
           </div>
           <div class="status-line"><span id="status" role="status">Ready when you are.</span><span>MULTIPLAYER · SERVER BY HEATH</span></div>
-          <p class="player-hint">Use your keyboard or turn on Touch controls. On phones, landscape and Fullscreen give you more room.</p>
+          <p class="player-hint">Use your keyboard or turn on Touch controls. On phones, landscape and Fullscreen give you more room. On iPhone, use Share → Add to Home Screen and open the saved app to play without the browser address bar.</p>
         </section>
         <section class="article-section" id="how-to-play" aria-labelledby="controls-heading">
           <h2 id="controls-heading">A quick refresher</h2>

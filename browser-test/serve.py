@@ -17,7 +17,8 @@ LOGS = ROOT / "logs"
 class Handler(SimpleHTTPRequestHandler):
     rbufsize = 0
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".wasm": "application/wasm",
-                      ".dir": "application/octet-stream", ".js": "text/javascript"}
+                      ".dir": "application/octet-stream", ".js": "text/javascript",
+                      ".webmanifest": "application/manifest+json"}
 
     def end_headers(self):
         immutable_runtime = urlsplit(self.path).path.startswith('/vendor/')

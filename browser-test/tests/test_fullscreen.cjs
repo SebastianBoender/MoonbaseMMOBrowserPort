@@ -27,3 +27,13 @@ test('only same-origin game iframe can request Escape from fallback',async()=>{
   e.windowEvents.message(message);assert.equal(e.active(),true);
   message.origin='https://moonbasemmo.com';e.windowEvents.message(message);assert.equal(e.active(),false);
 });
+test('fullscreen starts with compact menu closed and Escape dismisses menu first',async()=>{
+  const e=environment('missing');await e.node('fullscreen').click();
+  assert.equal(e.node('fullscreen-menu').hidden,true);
+  e.node('fullscreen-menu-toggle').click();
+  assert.equal(e.node('fullscreen-menu').hidden,false);
+  assert.equal(e.node('fullscreen-menu-toggle').attributes['aria-expanded'],'true');
+  e.events.keydown({key:'Escape'});
+  assert.equal(e.node('fullscreen-menu').hidden,true);assert.equal(e.active(),true);
+  e.events.keydown({key:'Escape'});assert.equal(e.active(),false);
+});

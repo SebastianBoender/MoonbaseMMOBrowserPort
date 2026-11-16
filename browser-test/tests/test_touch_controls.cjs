@@ -21,7 +21,7 @@ function environment() {
   runInNewContext(source,{document:{hidden:false,getElementById:element,addEventListener:(type,fn)=>docEvents[type]=fn},location:{origin:'https://moonbasemmo.com'},matchMedia:()=>({matches:true,addEventListener(){}}),setInterval:fn=>intervals.push(fn),addEventListener:(type,fn)=>listeners[type]=fn});
   const state=(mode='Walking')=>listeners.message({origin:'https://moonbasemmo.com',source:child,data:{type:'moonbase-touch-state',loaded:true,frame:5,mode}});
   state(); messages.length=0;
-  return {element,messages,state,fire:type=>listeners[type](),tick:()=>intervals.forEach(fn=>fn())};
+  return {element,messages,state,docEvents,fire:type=>listeners[type](),tick:()=>intervals.forEach(fn=>fn())};
 }
 test('independent fingers hold movement and jetpack; cancelling one preserves the other',()=>{
   const e=environment();e.element('forward').fire('pointerdown',{pointerId:1});e.element('jetpack').fire('pointerdown',{pointerId:2});
@@ -38,4 +38,10 @@ test('mode changes disable incompatible actions; stale reload resets pending for
   const e=environment();assert.equal(e.element('brake').disabled,true);e.state('Driving');assert.equal(e.element('jetpack').disabled,true);assert.equal(e.element('brake').disabled,false);
   e.element('touch-name-form').fire('submit');assert.equal(e.element('touch-name-form-button').disabled,true);
   e.element('game').fire('load');assert.equal(e.element('touch-name-form-button').disabled,false);assert.equal(e.element('touch-chat-form').hidden,true);
+});
+
+test('opening the fullscreen menu releases held keys and stops their heartbeat',()=>{
+  const e=environment();e.element('forward').fire('pointerdown');
+  e.docEvents['moonbase-controlsrelease']();assert.equal(e.messages.at(-1).action,'release');
+  const count=e.messages.length;e.tick();assert.equal(e.messages.length,count);
 });
