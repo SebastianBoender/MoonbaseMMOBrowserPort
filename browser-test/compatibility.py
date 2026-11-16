@@ -342,6 +342,15 @@ def adapt_gameplay(script, names):
         elif name_id == names.index('WalkPlayer'):
             adapted = insert_bytecode(code, {0: ground_contact(walk_body, 50, 'ongroundwalk')})
             label = 'WalkPlayer: finite Y-up terrain contact, original idle braking and off-map fall recovery'
+        elif name_id == names.index('CheckCarFlipped'):
+            # The original recovery sets Car/Spring rotation to zero. Keep the
+            # fallback's heading accumulator synchronized with both reset paths.
+            resets = [op['pos'] + len(op['raw']) for op in decode(code)
+                      if op['op'] == 0x62 and op['value'] == names.index('rotation')]
+            assert size == 580 and resets == [309, 342, 487, 530]
+            reset_yaw = b'\x03' + named(0x4f, 'browserCartYaw')
+            adapted = insert_bytecode(code, {position: reset_yaw for position in resets})
+            label = 'CheckCarFlipped: synchronize browser heading with authored flip and fall recovery'
         elif name_id == names.index('FramerateTest'):
             # Avoid a background-tab stall producing a multi-second Havok step
             # and one enormous steering/rocket impulse on return.
@@ -385,7 +394,7 @@ def adapt_gameplay(script, names):
         changes.append({'name_id': name_id, 'change': label,
                         'original_sha256': hashlib.sha256(code).hexdigest(),
                         'adapted_sha256': hashlib.sha256(adapted).hexdigest()})
-    assert len(changes) == 9
+    assert len(changes) == 10
     for position in (8, 12):
         struct.pack_into('>I', script, position, len(script))
     return changes

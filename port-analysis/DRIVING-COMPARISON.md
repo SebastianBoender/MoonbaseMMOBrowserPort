@@ -61,3 +61,15 @@ The yaw expression multiplies by 573 and divides by 10: approximately radians-to
 5. Validate both Original and Modern clients, keyboard/touch inputs, different gravity settings, frame stalls and multiplayer updates. Both clients currently share this vehicle workaround; higher render resolution does not restore original physics.
 
 No driving behavior was changed by this audit. The existing stable fallback remains until a replacement can be compared and tested.
+
+## Native baseline captured in Wine
+
+The follow-up implementation work now runs the original projector in Wine, using `browser-test/tests/native_driving_probe.py`. It preserves the original world and Havok setup, substitutes constant button states in `DrivePlayer`, sets `FrameMod = 1`, and steps native Havok by 0.022 with one substep. No terms are accepted. All transport is inside an isolated loopback namespace, and the original distribution remains read-only. These are deterministic test inputs, not a recording of an unmodified interactive session.
+
+Native measurements are retained in `browser-test/tests/fixtures/native-driving/`. With forward held, native Car Z moves from −700 to −133.9516 after 90 steps (566.0484 units), ending at forward velocity 588.1211. The browser fallback under the same fixed-step/button fixture reaches Z 282.0648 (982.0648 units), with forward velocity 616.2081. The original seat/body moves independently; the browser fallback rigidly attaches it.
+
+Re-enabling original vehicle handlers without changing the browser runtime is insufficient: a 90-step emulator trial ends at Car Z −699.5482 despite reported forward velocity 666.3902. The generic Z-up correction is incompatible with this Y-up scene. Experimental emulator changes remain isolated until native-baseline comparisons pass.
+
+The confirmed heading-recovery defect is corrected: original flip/fall rotation reset paths now also clear `browserCartYaw`. A live diagnostic forced a nonzero accumulator and an off-map fall, then verified recovery cleared the accumulator to zero. This small fix does not establish full vehicle parity.
+
+To reproduce a native trace, use the bubblewrap command in CHAT-COMPATIBILITY.md, substituting `native_driving_probe.py` and adding `--frames 90 --input forward`. Supported inputs include idle, forward, reverse, brake and forward-left/right/brake. The fixture writes `driving-results.json`, with tick, Car position/linear velocity/angular velocity/rotation, then the same four fields for Spring. Wine initialization can take longer than a warm run; rerun with the same disposable output prefix after a first-start timeout. Never run the fixture with a public network route.

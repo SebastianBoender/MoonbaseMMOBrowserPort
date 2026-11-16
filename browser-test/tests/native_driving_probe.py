@@ -1,0 +1,135 @@
+"""Measure the original vehicle under Wine against an isolated loopback fixture."""
+import argparse,hashlib,json,os,socket,struct,subprocess,sys,time
+from pathlib import Path
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('root',type=Path,help='Original package directory (read-only)')
+parser.add_argument('--output',type=Path,required=True,help='Disposable Wine prefix and fixture output')
+parser.add_argument('--frames',type=int,default=180)
+parser.add_argument('--input',choices=['idle','forward','reverse','left','right','brake','forward-left','forward-right','forward-brake'],default='forward')
+args=parser.parse_args()
+# Require a network namespace with no external routes before running Wine.
+if any(line.split()[1] == '00000000' for line in Path('/proc/net/route').read_text().splitlines()[1:]):
+ raise SystemExit('Run inside an isolated network namespace, as documented in README.md.')
+root=args.root.resolve();sys.path.insert(0,str(root/'browser-test'))
+from compatibility import encode
+out=args.output.resolve();out.mkdir(exist_ok=True,parents=True)
+exe=bytearray((root/'MB_2010-10-08.exe').read_bytes());base=0x495504
+assert hashlib.sha256(exe).hexdigest() == '6d7b81d5d1e76ca6ee7ca2f1fc4286ab19a62a344417f88d229f677280b43a3a'
+movie=(root/'browser-test/public/game/moonbase.dir').read_bytes();mm=struct.unpack_from('<I',movie,24)[0];h,st,_,n=struct.unpack_from('<HHII',movie,mm+8)
+res={i:struct.unpack_from('<4sII',movie,mm+8+h+i*st) for i in range(n)}
+_,ln,off=res[1059];nd=movie[off+8:off+8+ln];cur,cnt=struct.unpack_from('>HH',nd,16);names=[]
+for _ in range(cnt):l=nd[cur];names.append(nd[cur+1:cur+1+l].decode('mac_roman'));cur+=l+1
+op=lambda c,v:encode(c,1 if v<256 else 2,v)
+named=lambda c,s:op(c,names.index(s))
+def patch_handler(resource,name,code):
+ _,ln,off=res[resource];s=movie[off+8:off+8+ln];cnt,tab=struct.unpack_from('>HI',s,72)
+ for j in range(cnt):
+  rec=tab+j*46
+  if struct.unpack_from('>H',s,rec)[0]!=names.index(name):continue
+  size,start=struct.unpack_from('>II',s,rec+4)
+  if len(code)<=size:
+   exe[base+off+8+start:base+off+8+start+size]=code+b'\x00'*(size-len(code))
+   struct.pack_into('>I',exe,base+off+8+rec+4,len(code))
+  else:
+   new=bytearray(exe[base+off+8:base+off+8+ln]);struct.pack_into('>II',new,rec+4,len(code),len(new));new.extend(code)
+   if len(exe)%2:exe.append(0)
+   offset=len(exe);exe.extend(b'rcsL'+struct.pack('<I',len(new))+new)
+   entry=base+mm+8+h+resource*st;struct.pack_into('<II',exe,entry+4,len(new),offset)
+   struct.pack_into('<I',exe,base+4,len(exe)-base-8)
+  return
+ raise ValueError(name)
+_,ln,off=res[1078];s=movie[off+8:off+8+ln];original=s[1294:1294+542]
+listener=socket.socket();listener.bind(('127.0.0.1',0));listener.listen();listener.settimeout(60);port=listener.getsockname()[1]
+# Literal zero is the fixed server host. Keep the original resource size.
+lt,tab=struct.unpack_from('>HI',s,78);data=struct.unpack_from('>I',s,88)[0];_,at=struct.unpack_from('>II',s,tab)
+struct.pack_into('>I',exe,base+off+8+data+at,10);exe[base+off+8+data+at+4:base+off+8+data+at+14]=b'127.0.0.1\0'
+tail=original[505:].replace(bytes.fromhex('ae065a'),encode(0x6e,2,port))
+setup=original[:5]+original[70:127]+encode(0x6f,4,123456)+op(0x43,1)+named(0x57,'string')+named(0x4f,'userID')+tail
+patch_handler(1078,'makeAServerConnection',setup)
+patch_handler(1060,'prepareMovie',op(0x42,0)+named(0x57,'makeAServerConnection')+b'\x01')
+
+# The original world, asset construction and Havok setup still run. No terms
+# are accepted; all network traffic is confined to this loopback fixture.
+patch_handler(1078,'DefaultMessageHandler',op(0x41,1)+named(0x4f,'OnlineConnection')+op(0x41,5)+op(0x42,1)+named(0x57,'go')+b'\x01')
+_,ln,off=res[1077];script=movie[off+8:off+8+ln];count,table=struct.unpack_from('>HI',script,72)
+handlers={}
+for i in range(count):
+ rec=table+i*46;ni=struct.unpack_from('>H',script,rec)[0];sz,at=struct.unpack_from('>II',script,rec+4);handlers[names[ni]]=(i,script[at:at+sz])
+patch_handler(1077,'beginSprite',handlers['beginSprite'][1][:1134]+b'\x01')
+lc,lt=struct.unpack_from('>HI',script,78);ld=struct.unpack_from('>I',script,88)[0]
+def literal(text):
+ for i in range(lc):
+  kind,at=struct.unpack_from('>II',script,lt+8*i)
+  if kind!=1:continue
+  sz=struct.unpack_from('>I',script,ld+at)[0]
+  if script[ld+at+4:ld+at+3+sz]==text.encode('mac_roman'):return op(0x44,i)
+ raise ValueError(text)
+def body(name):return named(0x49,'havok')+literal(name)+op(0x43,2)+named(0x67,'RigidBody')
+drive=bytearray(handlers['DrivePlayer'][1])
+from compatibility import decode
+instructions=decode(drive)
+selected={key for part in args.input.split('-') if (key:={'forward':126,'reverse':125,'left':123,'right':124,'brake':' '}.get(part)) is not None}
+for i,o in enumerate(instructions):
+ if o['op']!=0x57 or names[o['value']]!='keyPressed':continue
+ start=instructions[i-2]['pos'];raw=drive[start:o['pos']+len(o['raw'])];assert len(raw)==7
+ key=instructions[i-2]['value'];is_space=instructions[i-2]['op']==0x44
+ pressed=(' ' in selected and is_space) or (not is_space and key in selected)
+ # A same-size constant expression preserves all branch offsets.
+ drive[start:start+7]=bytes([0x41,0 if pressed else 1,0x14,0x03,0x05,0x03,0x05])
+patch_handler(1077,'DrivePlayer',drive)
+tick=named(0x49,'RoomNumber')
+step=tick+op(0x41,1)+b'\x05'+named(0x4f,'RoomNumber')+op(0x41,1)+named(0x50,'FrameMod')
+step+=op(0x42,0)+op(0x56,handlers['DrivePlayer'][0])+handlers['prepareFrame'][1][220:237]
+fields=[tick]
+for name in ['car','Spring']:
+ for prop in ['position','linearVelocity','angularVelocity','rotation']:
+  fields.append(body(name)+named(0x61,prop)+op(0x43,1)+named(0x57,'string'))
+content=b''.join(fields)+op(0x43,len(fields))+b'\x1e'
+step+=named(0x49,'gmultiuserinstance')+literal('car')+literal('car')+content+op(0x42,4)+named(0x67,'sendNetMessage')
+step=named(0x49,'OnlineConnection')+op(0x55,len(step)+3)+step+b'\x01'
+patch_handler(1077,'prepareFrame',step)
+(out/'probe.exe').write_bytes(exe)
+for name in ['Dirapi.dll','Iml32.dll','Proj.dll','msvcp100.dll','msvcr100.dll','Xtras']:
+ p=out/name
+ if not p.exists():p.symlink_to(root/name)
+def string(b):return struct.pack('!I',len(b))+b+b'\0'*(len(b)%2)
+def frame(subject,content):
+ p=struct.pack('!iI',0,0)+string(subject)+string(b'System')+struct.pack('!I',1)+string(b'*')+content
+ return b'\x72\0'+struct.pack('!I',len(p))+p
+def read(c,n):
+ b=b''
+ while len(b)<n:
+  r=c.recv(n-len(b))
+  if not r:raise EOFError()
+  b+=r
+ return b
+def parse_packet(p):
+ def text(at):
+  n=struct.unpack_from('!I',p,at)[0];return p[at+4:at+4+n].decode('mac_roman'),at+4+n+n%2
+ _,at=text(8);_,at=text(at);count=struct.unpack_from('!I',p,at)[0];at+=4
+ for _ in range(count):_,at=text(at)
+ def datum(at):
+  kind=struct.unpack_from('!H',p,at)[0];at+=2
+  if kind==1:return struct.unpack_from('!i',p,at)[0],at+4
+  if kind==3:return text(at)
+  if kind==7:
+   n=struct.unpack_from('!I',p,at)[0];at+=4;values=[]
+   for _ in range(n):v,at=datum(at);values.append(v)
+   return values,at
+  raise ValueError((kind,at,p.hex()))
+ return datum(at)[0]
+env=dict(os.environ,WINEPREFIX=str(out/'wine-prefix'),WINEDEBUG='-all',WINEDLLOVERRIDES='mscoree,mshtml=')
+log=open(out/'wine.log','w');p=subprocess.Popen(['wine',str(out/'probe.exe')],cwd=out,env=env,stdout=log,stderr=log)
+try:
+ c,_=listener.accept();c.settimeout(20)
+ with c:
+  head=read(c,6);read(c,struct.unpack('!I',head[2:])[0]);print('Native vehicle connected',flush=True)
+  c.sendall(frame(b'Logon',struct.pack('!H',3)+string(b'Local physics fixture')))
+  samples=[]
+  for i in range(args.frames):
+   head=read(c,6);packet=read(c,struct.unpack('!I',head[2:])[0]);sample=parse_packet(packet);samples.append(sample)
+   if i%30==0:print(json.dumps(sample),flush=True)
+  (out/'driving-results.json').write_text(json.dumps({'input':args.input,'dt':0.022,'samples':samples},indent=2)+'\n')
+finally:
+ p.terminate();listener.close();log.close()
+ subprocess.run(['wineserver','-k'],env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)
