@@ -100,8 +100,19 @@
     event.preventDefault(); event.stopImmediatePropagation();
     if (activePointer) return;
     mount.setPointerCapture(event.pointerId);
-    activePointer = {id:event.pointerId, point:coords};
-    window.__vm.mouse_move(...coords); window.__vm.mouse_down(...coords);
+    const vm = window.__vm;
+    const sprite = vm.player_get_sprite_at?.(...coords) || 0;
+    const editable = sprite > 0 && vm.is_sprite_editable_field?.(sprite);
+    activePointer = {id:event.pointerId, point:coords, field:editable ? sprite : null};
+    vm.mouse_move(...coords); vm.mouse_down(...coords);
+    // We bypass React's unscaled pointer handler, so preserve its focus path:
+    // the hidden native input forwards text/IME; the stage forwards game keys.
+    if (editable) {
+      mount.querySelector('input[type="text"]')?.focus({preventScroll:true});
+      vm.field_set_caret_at?.(sprite, ...coords, !!event.shiftKey);
+    } else {
+      mount.querySelector('canvas')?.closest('[tabindex]')?.focus({preventScroll:true});
+    }
   }, true);
   mount.addEventListener('pointermove', event => {
     if (activePointer && event.pointerId !== activePointer.id) return;
@@ -110,6 +121,7 @@
     event.preventDefault(); event.stopImmediatePropagation();
     if (activePointer) activePointer.point = coords;
     window.__vm.mouse_move(...coords);
+    if (activePointer?.field) window.__vm.field_drag_extend_to?.(activePointer.field, ...coords);
   }, true);
   for (const type of ['pointerup','pointercancel','lostpointercapture']) mount.addEventListener(type, event => {
     if (!activePointer || event.pointerId !== activePointer.id) return;

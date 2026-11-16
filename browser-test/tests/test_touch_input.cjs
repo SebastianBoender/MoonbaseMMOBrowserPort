@@ -8,7 +8,9 @@ function environment() {
   let now = 1000, mode = 'Walking', frame = 5, paused = false;
   const rect = {left:10, top:20, width:320, height:220, right:330, bottom:240};
   const canvas = {width:800, height:550, getBoundingClientRect:() => rect};
-  const mount = {querySelector:() => canvas, setPointerCapture() {}, addEventListener:(type,fn) => pointer[type]=fn};
+  const input = {focus:() => calls.push(['focusInput'])};
+  canvas.closest=()=>({focus:()=>calls.push(['focusStage'])});
+  const mount = {querySelector:selector => selector.startsWith('input') ? input : canvas, setPointerCapture() {}, addEventListener:(type,fn) => pointer[type]=fn};
   const vm = {
     mcp_get_execution_state:() => JSON.stringify({movie_loaded:true,current_frame:frame,is_paused:paused}),
     key_down:(...args) => calls.push(['down',...args]), key_up:(...args) => calls.push(['up',...args]),
@@ -23,7 +25,7 @@ function environment() {
     const event={pointerId:1,button:0,clientX:170,clientY:130,target:{closest:()=>null},preventDefault(){},stopImmediatePropagation(){},...overrides};
     pointer[type](event);
   };
-  return {calls,message,point,rect,document,fire:type=>listeners[type](),hide:()=>{document.hidden=true;doc.visibilitychange();},tick:()=>intervals.forEach(fn=>fn()),advance:t=>now+=t,setMode:m=>mode=m,setFrame:f=>frame=f,setPaused:p=>paused=p};
+  return {calls,vm,message,point,rect,document,fire:type=>listeners[type](),hide:()=>{document.hidden=true;doc.visibilitychange();},tick:()=>intervals.forEach(fn=>fn()),advance:t=>now+=t,setMode:m=>mode=m,setFrame:f=>frame=f,setPaused:p=>paused=p};
 }
 test('independent held arrows and jetpack, with no repeated downs on heartbeats', async () => {
   const e=environment(); await e.message({action:'enabled',enabled:true});
@@ -62,7 +64,7 @@ test('vehicle mode accepts steering/brake/exit and excludes rocket/dance', async
 });
 test('scaled canvas taps map to original 800 by 550 coordinates and cancel safely', () => {
   const e=environment();e.point('pointerdown');
-  assert.deepEqual(e.calls,[['move',400,275],['mouseDown',400,275]]);
+  assert.deepEqual(e.calls,[['move',400,275],['mouseDown',400,275],['focusStage']]);
   e.point('pointermove',{clientX:210}); assert.deepEqual(e.calls.at(-1),['move',500,275]);
   e.point('pointercancel',{clientX:210}); assert.deepEqual(e.calls.at(-1),['mouseUp',500,275]);
   const count=e.calls.length;e.point('lostpointercapture');assert.equal(e.calls.length,count);
@@ -75,4 +77,15 @@ test('holding a scaled pointer is not cancelled by keyboard watchdog or parent r
 test('unscaled desktop events and player overlay buttons retain native handling', () => {
   const e=environment();e.rect.width=800;e.rect.height=550;e.point('pointerdown');assert.deepEqual(e.calls,[]);
   const f=environment();f.point('pointerdown',{target:{closest:()=>({})}});assert.deepEqual(f.calls,[]);
+});
+
+test('scaled editable fields focus the native keyboard input and preserve selection', () => {
+  const e=environment();
+  e.vm.player_get_sprite_at=()=>7;e.vm.is_sprite_editable_field=()=>true;
+  e.vm.field_set_caret_at=(...args)=>e.calls.push(['caret',...args]);
+  e.vm.field_drag_extend_to=(...args)=>e.calls.push(['select',...args]);
+  e.point('pointerdown');assert.deepEqual(e.calls.slice(-2),[['focusInput'],['caret',7,400,275,false]]);
+  e.point('pointermove',{clientX:210});assert.deepEqual(e.calls.at(-1),['select',7,500,275]);
+  e.point('pointerup');const count=e.calls.length;e.point('pointermove');
+  assert.deepEqual(e.calls.slice(count),[['move',400,275]]);
 });
