@@ -61,6 +61,17 @@ class ProductionHostTests(unittest.TestCase):
     def test_directory_listing_is_disabled(self):
         self.assertEqual(self.request('GET', '/vendor/')[0], 404)
 
+    def test_updated_assets_cannot_reuse_future_dated_cached_chat(self):
+        for path in ('/', '/player.html', '/chat.js', '/player.css', '/game/moonbase-browser.dir'):
+            with self.subTest(path=path):
+                connection = HTTPConnection(*self.server.server_address, timeout=3)
+                connection.request('GET', path, headers={'If-Modified-Since': 'Wed, 01 Jan 2031 00:00:00 GMT'})
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.getheader('Cache-Control'), 'no-store')
+                self.assertTrue(response.read())
+                connection.close()
+
 
 if __name__ == '__main__':
     unittest.main()

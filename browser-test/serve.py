@@ -20,7 +20,8 @@ class Handler(SimpleHTTPRequestHandler):
                       ".dir": "application/octet-stream", ".js": "text/javascript"}
 
     def end_headers(self):
-        self.send_header("Cache-Control", "no-cache")
+        immutable_runtime = urlsplit(self.path).path.startswith('/vendor/')
+        self.send_header("Cache-Control", "no-cache" if immutable_runtime else "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         websocket_origins = ' '.join(origin.replace('https://', 'wss://').replace('http://', 'ws://')
@@ -34,6 +35,18 @@ class Handler(SimpleHTTPRequestHandler):
             f"worker-src 'self' blob:; connect-src 'self' blob: {websocket_origins}; "
             "object-src 'none'; base-uri 'self'; frame-ancestors 'self'")
         super().end_headers()
+
+    def send_head(self):
+        # Release files can have older mtimes than a browser's cached copy
+        # (e.g. SCP preserves timestamps, followed by a git-based install).
+        # Date-based 304 responses would mix old chat JS/CSS with a new movie.
+        # Always send mutable app/game assets; keep the pinned vendor runtime
+        # revalidatable rather than downloading its large WASM on every launch.
+        if not urlsplit(self.path).path.startswith('/vendor/'):
+            for header in ('If-Modified-Since', 'If-None-Match'):
+                if header in self.headers:
+                    del self.headers[header]
+        return super().send_head()
 
     def json_response(self, status, value):
         payload = json.dumps(value).encode()
