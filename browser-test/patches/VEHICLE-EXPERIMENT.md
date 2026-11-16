@@ -20,7 +20,7 @@ The next trial uses the native linear-dashpot anchor convention (zero means COM;
 
 The corresponding measured browser traces live beside the native references in `tests/fixtures/native-driving`. `tests/compare_driving.py` checks complete, matching input/timestep traces and compares positions, velocities and axis-angle rotations. The comparison deliberately fails on the first contact at step 24; compilation and a plausible screenshot are not parity checks.
 
-Native material probes show 0.5 friction on Car, Spring and GroundShape. The first impact has a tangential/normal impulse ratio of 0.5. Changing either the chassis or ground material to 0.25 changes that ratio to 0.25. The research patch now tests the lower-material rule, coupled sliding friction and zero-gravity scene recognition (trial 7, not yet measured).
+Native material probes show 0.5 friction on Car, Spring and GroundShape. The first impact has a tangential/normal impulse ratio of 0.5. Changing either the chassis or ground material to 0.25 changes that ratio to 0.25. The research patch now tests the lower-material rule, coupled sliding friction and zero-gravity scene recognition (trial 7).
 
 Native first-contact position is `(2173.82,-713.0021,-583.0064)`; the trial-6 support-vertex solver chooses `(2197.9205,-713.0021,-544.8195)`. Both lie on the touching face, but their different moment arms change the response. Reproducing Havok's contact-feature selection remains necessary for deterministic trace parity. Do not hardcode a contact-point scale to fit this single impact.
 
@@ -33,3 +33,11 @@ python3 /tmp/moonbase-driving-browser/serve.py --port 8081
 ```
 
 Open the private fixture, use Player diagnostics → Trace world startup, click Play, then run `@export-driving` in its Lingo console. The movie captures each step before the next one; browser polling cannot drop samples. Exported `Driving row` messages have the same nine fields as the basic native trace. The fixture intentionally reuses the fallback-only `browserCartYaw` variable as its private trace list; no published runtime uses that representation.
+
+## Trial 7 acceptance result
+
+Trial 7 is **not accepted and remains excluded from deployment**. At 90 forward steps, its chassis reaches Z=-136.9788 versus native -133.9516 (0.535% less forward travel). Reverse, forward-left and forward-brake traces are also retained, and all still fail the strict comparison. Improved distance alone does not establish matching handling.
+
+A longer 360-step forward test exposes substantial terrain instability: native Car ends at (1926.07,-228.0804,3496.43), while the experimental browser Car ends at (1886.56,-123.2359,3060.34), with approximately 69.55 degrees of pitch. The browser console retained only the last 180 rows, so that partial export is not committed as a complete reference trace. The complete native 360-step reference is retained.
+
+Independent unit-angular-velocity probes confirm that the native and browser inertia tensors agree to native output precision: Car diagonal (86.8559,117.3904,35.2262), Spring (7.4789,9.4858,2.0797). Remaining work includes contact-feature selection and verifying model/physics centre-of-mass transform synchronization; no unverified change to either is enabled in production.

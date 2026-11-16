@@ -1,0 +1,26 @@
+[
+  {
+    "body": "Car",
+    "value": "vector(86.8558, 0.0000, -0.0000)"
+  },
+  {
+    "body": "Car",
+    "value": "vector(0.0000, 117.3904, -0.0000)"
+  },
+  {
+    "body": "Car",
+    "value": "vector(-0.0000, -0.0000, 35.2260)"
+  },
+  {
+    "body": "Spring",
+    "value": "vector(7.4789, 0.0000, -0.0000)"
+  },
+  {
+    "body": "Spring",
+    "value": "vector(0.0000, 9.4858, -0.0000)"
+  },
+  {
+    "body": "Spring",
+    "value": "vector(-0.0000, -0.0000, 2.0796)"
+  }
+]

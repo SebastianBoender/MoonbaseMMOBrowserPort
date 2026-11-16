@@ -1,0 +1,21 @@
+{
+  "input": "idle",
+  "inertia_only": true,
+  "dt": 0.022,
+  "details": false,
+  "spring_offset": 10,
+  "contacts": false,
+  "materials": false,
+  "friction_override": null,
+  "samples": [
+    [
+      1,
+      "vector( 86.8559, 0.0000, -0.0000 )",
+      "vector( 0.0000, 117.3904, -0.0000 )",
+      "vector( -0.0000, -0.0000, 35.2262 )",
+      "vector( 7.4789, 0.0000, -0.0000 )",
+      "vector( 0.0000, 9.4858, 0.0000 )",
+      "vector( -0.0000, 0.0000, 2.0797 )"
+    ]
+  ]
+}

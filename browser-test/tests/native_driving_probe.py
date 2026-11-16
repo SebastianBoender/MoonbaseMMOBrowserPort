@@ -5,6 +5,8 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('root',type=Path,help='Original package directory (read-only)')
 parser.add_argument('--output',type=Path,required=True,help='Disposable Wine prefix and fixture output')
 parser.add_argument('--details',action='store_true',help='Also capture native centers of mass')
+parser.add_argument('--model-positions',action='store_true',help='Read rendered Car/Spring model origins alongside physics positions')
+parser.add_argument('--inertia',action='store_true',help='One-step inertia-only readback using unit angular velocities')
 parser.add_argument('--materials',action='store_true',help='Read native Car/Spring/ground friction values')
 parser.add_argument('--contacts',action='store_true',help='Also capture the native collision list')
 parser.add_argument('--friction-body',choices=['car','GroundShape'],default='car')
@@ -28,7 +30,7 @@ movie=(root/'browser-test/public/game/moonbase.dir').read_bytes();mm=struct.unpa
 res={i:struct.unpack_from('<4sII',movie,mm+8+h+i*st) for i in range(n)}
 _,ln,off=res[1059];nd=movie[off+8:off+8+ln];cur,cnt=struct.unpack_from('>HH',nd,16);names=[]
 for _ in range(cnt):l=nd[cur];names.append(nd[cur+1:cur+1+l].decode('mac_roman'));cur+=l+1
-extra_names=[name for name, enabled in [('centerOfMass',args.details),('collisionList',args.contacts)] if enabled and name not in names]
+extra_names=[name for name, enabled in [('centerOfMass',args.details),('collisionList',args.contacts),('angularMomentum',args.inertia)] if enabled and name not in names]
 if extra_names:
  names.extend(extra_names);new=bytearray(nd[:20])
  for name in names:
@@ -120,13 +122,23 @@ tick=named(0x49,'RoomNumber')
 step=tick+op(0x41,1)+b'\x05'+named(0x4f,'RoomNumber')+op(0x41,1)+named(0x50,'FrameMod')
 step+=op(0x42,0)+op(0x56,handlers['DrivePlayer'][0])+handlers['prepareFrame'][1][220:237]
 fields=[tick]
-for name in ['car','Spring']:
- for prop in ['position','linearVelocity','angularVelocity','rotation']+(['centerOfMass'] if args.details else []):
-  fields.append(body(name)+named(0x61,prop)+op(0x43,1)+named(0x57,'string'))
-if args.materials:
- for name in ['car','Spring','GroundShape']:
-  fields.append(body(name)+named(0x61,'friction')+op(0x43,1)+named(0x57,'string'))
-if args.contacts:fields.append(named(0x49,'havok')+named(0x61,'collisionList')+op(0x43,1)+named(0x57,'string'))
+if args.inertia:
+ if args.frames != 1:raise SystemExit('Inertia-only measurements require --frames 1')
+ for name in ['car','Spring']:
+  for axis in range(3):
+   vector=b''.join(op(0x41,int(i==axis)) for i in range(3))+op(0x43,3)+named(0x57,'vector')
+   fields.append(body(name)+vector+named(0x62,'angularVelocity')+body(name)+named(0x61,'angularMomentum')+op(0x43,1)+named(0x57,'string'))
+else:
+ for name in ['car','Spring']:
+  for prop in ['position','linearVelocity','angularVelocity','rotation']+(['centerOfMass'] if args.details else []):
+   fields.append(body(name)+named(0x61,prop)+op(0x43,1)+named(0x57,'string'))
+ if args.model_positions:
+  for name in ['car','Spring']:
+   fields.append(named(0x49,'sp')+literal(name)+op(0x43,2)+named(0x67,'model')+named(0x61,'transform')+named(0x61,'position')+op(0x43,1)+named(0x57,'string'))
+ if args.materials:
+  for name in ['car','Spring','GroundShape']:
+   fields.append(body(name)+named(0x61,'friction')+op(0x43,1)+named(0x57,'string'))
+ if args.contacts:fields.append(named(0x49,'havok')+named(0x61,'collisionList')+op(0x43,1)+named(0x57,'string'))
 content=b''.join(fields)+op(0x43,len(fields))+b'\x1e'
 step+=named(0x49,'gmultiuserinstance')+literal('car')+literal('car')+content+op(0x42,4)+named(0x67,'sendNetMessage')
 step=named(0x49,'OnlineConnection')+op(0x55,len(step)+3)+step+b'\x01'
@@ -172,7 +184,7 @@ try:
   for i in range(args.frames):
    head=read(c,6);packet=read(c,struct.unpack('!I',head[2:])[0]);sample=parse_packet(packet);samples.append(sample)
    if i%30==0:print(json.dumps(sample),flush=True)
-  (out/'driving-results.json').write_text(json.dumps({'input':args.input,'dt':args.step_seconds,'details':args.details,'spring_offset':args.spring_offset,'contacts':args.contacts,'materials':args.materials,'friction_override':({'body':args.friction_body,'coefficient':args.friction_percent/100} if args.friction_percent is not None else None),'samples':samples},indent=2)+'\n')
+  (out/'driving-results.json').write_text(json.dumps({'input':args.input,'inertia_only':args.inertia,'model_positions':args.model_positions,'dt':args.step_seconds,'details':args.details,'spring_offset':args.spring_offset,'contacts':args.contacts,'materials':args.materials,'friction_override':({'body':args.friction_body,'coefficient':args.friction_percent/100} if args.friction_percent is not None else None),'samples':samples},indent=2)+'\n')
 finally:
  p.terminate();listener.close();log.close()
  subprocess.run(['wineserver','-k'],env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)

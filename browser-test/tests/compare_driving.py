@@ -41,11 +41,13 @@ def distance(a, b, rotation=False):
 
 
 def canonical(trace):
+    if trace.get('inertia_only'):
+        raise ValueError('Inertia probes are not driving traces')
     rows = trace['samples']
     if not rows:
         raise ValueError('Trace has no samples')
     for expected, row in enumerate(rows, 1):
-        if row[0] != expected or len(row) != (11 if trace.get('details') else 9) + bool(trace.get('contacts')) + 3 * bool(trace.get('materials')):
+        if row[0] != expected or len(row) != (11 if trace.get('details') else 9) + bool(trace.get('contacts')) + 3 * bool(trace.get('materials')) + 2 * bool(trace.get('model_positions')):
             raise ValueError('Missing tick or malformed sample')
     return [[r[0], *r[1:5], *r[6:10]] for r in rows] if trace.get('details') else [r[:9] for r in rows]
 
