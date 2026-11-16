@@ -207,8 +207,14 @@ def adapt_gameplay(script, names):
                           bytes([0x03]) + encode(0x4f, 2, names.index('browserConsoleVersion')) +
                           bytes.fromhex('4b00') + encode(0x4f, 2, names.index('browserGameplay')) +
                           b'\x03' + named(0x4f, 'browserCartYaw'))
-            adapted = insert_bytecode(code, {0: initialize})
-            label = 'beginSprite: initialize bounded browser console mirror'
+            # DirPlayer defaults textured diffuse to white. This decal's
+            # ShadowAlpha texture supplies opacity; lambert7 supplies its dark
+            # authored color. Keep that color instead of lighting a white disc.
+            shadow = (named(0x49, 'sp') + literal_for('lambert7') + bytes.fromhex('4302') +
+                      named(0x67, 'shader') + bytes.fromhex('4101') + named(0x62, 'useDiffuseWithTexture'))
+            assert code[-1:] == b'\x01'
+            adapted = insert_bytecode(code, {0: initialize, len(code) - 1: shadow})
+            label = 'beginSprite: initialize browser console and preserve dark shadow diffuse with texture'
         elif name_id == names.index('prepareFrame'):
             assert code[220:224] == bytes.fromhex('49534ab2') and code[235:237] == bytes.fromhex('67b4')
             # Park both pieces when this client is not driving. The runtime's
@@ -505,7 +511,7 @@ def prepare(root):
     names.append('getNetMessage')
     names.append('puppet')
     names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay', 'browserGroundHeight', 'browserCartYaw', 'browserBall', 'browserBallHeight', 'browserBallBounce', 'browserBallDrag', 'browserBallSpeed'])
-    for name in ['getAt', 'region']:
+    for name in ['getAt', 'region', 'useDiffuseWithTexture']:
         if name not in names:
             names.append(name)
     names[names.index('RigidBody')] = 'rigidBody'
