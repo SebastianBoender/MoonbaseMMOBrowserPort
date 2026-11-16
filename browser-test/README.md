@@ -179,3 +179,8 @@ Mobile input verification: the 390px browser viewport exercised native name entr
 Deployment packages stamp local script and stylesheet URLs in both HTML documents with each asset's SHA-256 prefix. This forces browsers with cached assets from older releases to fetch the matching chat/UI files even if the older response allowed caching. After the first upgrade to this packaging change, open the site with a fresh query string (for example `/?update=asset-versions`) or hard-refresh the page.
 
 Fullscreen now expands the stage to fit the display while preserving its aspect ratio. The fullscreen toolbar provides Exit and Touch controls. Browsers without element fullscreen, or denying the request, use an in-page viewport-filling fallback; browser chrome remains visible there. Escape exits the fallback even with game focus.
+
+
+### Separate Modern client
+
+The default entry remains Original. Choose **Modern client** (or open `/?client=modern`) for optional 720p, 1080p, 1440p/QHD (2K) and 4K/UHD rendering. The original aspect ratio and authored UI are preserved; quality changes do not reconnect multiplayer. Modern includes capability checks, safe rollback, context recovery and local frame-time diagnostics. See [MODERN-CLIENT.md](MODERN-CLIENT.md) for dimensions, architecture, build provenance, validation and limitations.

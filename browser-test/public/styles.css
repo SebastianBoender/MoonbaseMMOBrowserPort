@@ -685,3 +685,15 @@ html.game-fullscreen,html.game-fullscreen body{overflow:hidden}
 #play-surface.is-fullscreen .fullscreen-tools{display:flex;gap:8px;position:absolute;top:max(4px,env(safe-area-inset-top,0px));right:max(8px,env(safe-area-inset-right,0px));z-index:100}
 .fullscreen-tools button{min-height:44px;padding:6px 10px}
 #play-surface.is-fullscreen .stage-shell{width:100%;max-width:none;min-width:0;margin:0;max-height:none}
+
+.client-switch{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+.client-switch a{padding:10px 14px;border:1px solid #93703b;background:#291a09;text-decoration:none}
+.client-switch a[aria-current="page"]{background:#795020;color:#ffe4a6;border-color:#d1a75e}
+#client-note,#modern-settings p{font-size:12px;line-height:1.5}
+#modern-settings{border:1px solid #82602e;padding:12px;margin:12px 0;background:#211609}
+#modern-settings select,.fullscreen-tools select{font:16px Georgia,serif;color:#ffe1a2;background:#241708;border:1px solid #b48843;padding:7px;max-width:100%}
+#render-metrics{font-family:monospace;font-size:11px}
+#fullscreen-quality{display:flex;align-items:center;gap:6px;font-size:12px}
+#fullscreen-render-status{font-size:11px}
+@media(max-width:600px){.fullscreen-tools{flex-wrap:wrap;justify-content:flex-end;max-width:100%}#fullscreen-render-status{display:none}#play-surface.is-fullscreen:has(#fullscreen-quality:not([hidden])){padding-top:102px}.fullscreen-tools select{max-width:155px}#fullscreen-quality{flex-basis:100%;justify-content:flex-end}}
+#render-details{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.5 monospace;max-height:300px;overflow:auto}

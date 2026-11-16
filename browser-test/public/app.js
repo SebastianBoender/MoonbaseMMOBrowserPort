@@ -59,7 +59,7 @@ window.addEventListener('message', (event) => {
 });
 function launch(offline = false) {
   testOnLoad = offline === true ? 'offline' : (offline === 'world' ? 'world' : false);
-  const params = new URLSearchParams({ mode: $('mode').value, flash: $('flash').checked ? '1' : '0', legacy: $('legacy').checked ? '1' : '0', terrain: $('terrain').checked ? '1' : '0', session: Date.now() });
+  const params = new URLSearchParams({ mode: $('mode').value, flash: $('flash').checked ? '1' : '0', legacy: $('legacy').checked ? '1' : '0', terrain: $('terrain').checked ? '1' : '0', session: Date.now(), client: window.moonbaseGraphics.client, resolution: window.moonbaseGraphics.resolution });
   $('placeholder').hidden = true;
   $('game').hidden = false;
   $('game').src = `/player.html?${params}`;
@@ -85,7 +85,7 @@ $('traceworld').addEventListener('click', () => {
 });
 $('download').addEventListener('click', async () => {
   const status = await fetch('/api/status').then(r => r.json()).catch(() => ({}));
-  const blob = new Blob([JSON.stringify({ status, events }, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ status, graphics: window.moonbaseGraphics, events }, null, 2)], { type: 'application/json' });
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `moonbase-diagnostics-${Date.now()}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 });

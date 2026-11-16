@@ -57,14 +57,13 @@
   function placeConsole() {
     const camera = window.moonbaseGPU?.camera, canvas = camera?.canvas;
     if (!canvas || !camera.viewport) return;
-    const bounds = canvas.getBoundingClientRect(), [left, bottom, width, height] = camera.viewport;
-    const scale = bounds.width / canvas.width;
-    // Director's ConsoleH = sprite(1).width / 2 - 241. Eight 16px lines
-    // sit above the original input line at stage height - 22.
-    panel.style.left = `${bounds.left + (left + Math.max(0, width / 2 - 241)) * scale}px`;
-    panel.style.top = `${bounds.top + (bottom + height - 150) * bounds.height / canvas.height}px`;
+    const bounds = canvas.getBoundingClientRect();
+    const {left,top,width,height}=window.moonbaseCoordinates.viewport(camera);
+    const scaleX=bounds.width/800, scaleY=bounds.height/550;
+    panel.style.left = `${bounds.left + (left + Math.max(0, width / 2 - 241)) * scaleX}px`;
+    panel.style.top = `${bounds.top + (top + height - 150) * scaleY}px`;
     panel.style.width = `${Math.min(482, width)}px`;
-    panel.style.transform = `scale(${scale},${bounds.height / canvas.height})`;
+    panel.style.transform = `scale(${scaleX},${scaleY})`;
   }
   async function evaluate(source) {
     const result = JSON.parse(await window.__vm.mcp_eval_lingo(source));

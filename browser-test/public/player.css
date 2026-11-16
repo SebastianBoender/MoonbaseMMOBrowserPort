@@ -7,3 +7,8 @@ html,body{width:100%;height:100%;margin:0;background:#000;color:#dce5ef;overflow
 
 /* Keep native slider/button drags in the game instead of scrolling the page. */
 #mount canvas{touch-action:none}
+
+/* Modern backing pixels are independent of the authored stage's CSS layout. */
+html[data-client="modern"] #stage_canvas_container{width:800px!important;height:550px!important}
+html[data-client="modern"] #stage_canvas_container canvas{width:800px!important;height:550px!important}
+html[data-client="modern"] #mount [data-center-stage]{transform:none!important;width:800px;height:550px}

@@ -59,8 +59,9 @@
       } else if (message.action === 'enter' && state.frame === 5 && state.mode === 'CharacterSetup') {
         // Authored 800 × 550 stage: route to the original Enter Base button,
         // including its own mode guard and console messages.
-        window.__vm.mouse_move(665,80); window.__vm.mouse_down(665,80);
-        setTimeout(() => window.__vm?.mouse_up(665,80), 40);
+        const point = window.moonbaseCoordinates?.logicalToRender(665,80) || [665,80];
+        window.__vm.mouse_move(...point); window.__vm.mouse_down(...point);
+        setTimeout(() => window.__vm?.mouse_up(...point), 40);
       } else if (message.action === 'chat') {
         if (state.frame !== 5) throw new Error('Enter the world before chatting.');
         const result = await window.moonbaseChat.submit(String(message.text || '').slice(0,200));
@@ -70,6 +71,7 @@
       send({type:'moonbase-touch-result', action:message.action, ok:false, message:error.message});
     }
   });
+  document.addEventListener('moonbase-resolution-changing', () => { releaseAll(); releasePointer(); });
   for (const event of ['blur','pagehide','orientationchange']) addEventListener(event, () => { releaseAll(); releasePointer(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { releaseAll(); releasePointer(); } });
   setInterval(() => {

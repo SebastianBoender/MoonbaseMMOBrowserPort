@@ -14,6 +14,7 @@
   };
   const report = (level, message) => {
     if (++sent > 3000 && level !== 'error') return;
+    if (level === 'error') window.dispatchEvent(new CustomEvent('moonbase-render-error', {detail:String(message)}));
     parent.postMessage({ type: 'moonbase-diagnostic', event: {
       level, message: String(message).slice(0, 6000), time: new Date().toISOString(), session: params.get('session')
     } }, location.origin);
@@ -160,7 +161,7 @@
       report('info', 'Compatibility test: legacy bytecode interpreter selected.');
     }
   }, 50);
-  script.src = '/vendor/dirplayer-0.8.1/dirplayer-diagnostic.js';
+  const modern = params.get('client') === 'modern';
   script.setAttribute('data-manual-init', '');
   script.setAttribute('data-require-click', '');
   if (params.get('flash') === '0') script.setAttribute('data-disable-flash', '');
@@ -176,7 +177,7 @@
     const object = document.createElement('object');
     object.type = 'application/x-director'; object.setAttribute('width', '800'); object.setAttribute('height', '550');
     const external = { src: params.get('terrain') === '0' ? '/game/moonbase.dir' : '/game/moonbase-browser.dir', _runMode: params.get('mode') === 'Projector' ? 'Projector' : 'Shockwave',
-      _moviePath: 'http://www.maidmarian.com/Moonbase/', swStretchStyle: 'fill' };
+      _moviePath: 'http://www.maidmarian.com/Moonbase/', swStretchStyle: 'fill', ...(modern ? {moonbaseModern:'1'} : {}) };
     for (const [name, value] of Object.entries(external)) {
       const param = document.createElement('param'); param.name = name; param.value = value; object.appendChild(param);
     }
@@ -184,5 +185,14 @@
     report('info', 'Runtime initialized; recovered movie mounted. Click to Play starts the original Lingo.');
   };
   script.onerror = () => report('error', 'DirPlayer bundle missing. Run python3 browser-test/setup.py.');
-  document.head.appendChild(script);
+  async function loadRuntime() {
+    if (modern) {
+      const response = await fetch('/game/modern-runtime.json', {cache:'no-store'});
+      if (!response.ok) throw new Error('Modern runtime missing. Run setup.py.');
+      const manifest = await response.json();
+      script.src = `/vendor/dirplayer-0.8.1/dirplayer-modern.js?v=${manifest.bundle_sha256}`;
+    } else script.src = '/vendor/dirplayer-0.8.1/dirplayer-diagnostic.js';
+    document.head.appendChild(script);
+  }
+  loadRuntime().catch(error => { report('error', error.message); const notice=document.getElementById('notice');notice.textContent=error.message;notice.hidden=false; });
 })();

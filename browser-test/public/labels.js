@@ -30,7 +30,7 @@
       const x = left + (clip[0] / clip[3] + 1) * vw / 2;
       // DirPlayer flips projection Y for its offscreen 3D texture; the stage
       // compositor then displays that texture with a second Y flip.
-      const y = bottom + (clip[1] / clip[3] + 1) * vh / 2 - 16;
+      const y = bottom + (clip[1] / clip[3] + 1) * vh / 2 - 16 * canvas.height / 550;
       if (x < left || x > left + vw || y < bottom || y > bottom + vh) continue;
       let element = labels.get(key);
       if (!element) { element = document.createElement('span'); labels.set(key, element); layer.append(element); }

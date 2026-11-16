@@ -6,6 +6,8 @@
   <meta name="description" content="Return to Moon Base, the classic Maid Marian multiplayer game. An unofficial browser port made for nostalgia, with a server hosted by Heath from Discord.">
   <title>Moon Base · A nostalgic browser revival</title>
   <link rel="stylesheet" href="/styles.css">
+  <script src="/resolution.js" defer></script>
+  <script src="/graphics.js" defer></script>
   <script src="/app.js" defer></script>
   <script src="/touch-controls.js" defer></script>
   <script src="/fullscreen.js" defer></script>
@@ -37,6 +39,9 @@
         <section id="play" class="play-section" aria-labelledby="page-title">
           <div class="section-heading"><h1 id="page-title">Moon Base</h1><span class="small-tag">BROWSER EDITION</span></div>
           <p class="intro">Take the moon buggy for a spin. Try the rocket pack. Meet old friends on the surface of the Moon. The classic multiplayer world is back in your browser.</p>
+          <div class="client-switch" aria-label="Choose client"><a id="original-client" href="?client=original#play">Original client</a><a id="modern-client" href="?client=modern#play">Modern client</a></div>
+          <p id="client-note">Original browser client · classic rendering and controls.</p>
+          <section id="modern-settings" hidden aria-label="Modern graphics"><label for="resolution">Render resolution</label> <select id="resolution"></select><p id="render-status" role="status">Choose a quality, then launch. Higher resolutions use more GPU resources.</p><p id="render-metrics"></p><button id="render-recover" hidden>Use Original quality</button></section>
           <section class="toolbar" aria-label="Player controls">
             <button id="start" class="primary">Play Moon Base</button>
             <button id="reload" disabled>Restart</button>
@@ -44,7 +49,7 @@
             <label class="touch-toggle"><input type="checkbox" id="touch-toggle"> Touch controls</label>
           </section>
           <div id="play-surface">
-          <div class="fullscreen-tools"><button id="fullscreen-touch" type="button" aria-pressed="false">Touch controls</button><button id="exit-fullscreen" type="button">Exit fullscreen</button></div>
+          <div class="fullscreen-tools"><label id="fullscreen-quality" hidden>Quality <select id="fullscreen-resolution" aria-label="Fullscreen render resolution"></select><span id="fullscreen-render-status" role="status"></span></label><button id="fullscreen-touch" type="button" aria-pressed="false">Touch controls</button><button id="exit-fullscreen" type="button">Exit fullscreen</button></div>
           <section class="stage-shell" aria-label="Moonbase game">
             <div id="placeholder"><div class="welcome-moon" aria-hidden="true"></div><p class="welcome-kicker">YOUR NEXT SMALL STEP</p><h2>Welcome back to the Moon.</h2><p>Select <strong>Play Moon Base</strong>, then click Play inside the player.</p><p class="welcome-caption">Original world. Familiar faces. A little nostalgia.</p></div>
             <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>
@@ -87,13 +92,14 @@
           <h2 id="credits-heading">The people who made it possible</h2>
           <div class="credit"><h3>Original game · Maid Marian</h3><p>Moon Base was created by <a href="http://www.maidmarian.com/" target="_blank" rel="noopener">Maid Marian Entertainment</a>. All credit for the original game goes to them. Thank you for the memories.</p></div>
           <div class="credit"><h3>Multiplayer server · Heath</h3><p>Special thanks to <strong>Heath from Discord</strong> for hosting the multiplayer server and giving us a place to meet again.</p></div>
-          <div class="credit"><h3>Browser port · The nostalgia project</h3><p>We adapted the game for modern browsers using <a href="https://github.com/igorlira/dirplayer-rs" target="_blank" rel="noopener">DirPlayer</a>. This is an unofficial fan project, with no affiliation implied.</p></div>
+          <div class="credit"><h3>Browser port · The nostalgia project</h3><p>We adapted the game for modern browsers using <a href="https://github.com/igorlira/dirplayer-rs" target="_blank" rel="noopener">DirPlayer</a>. This is an unofficial fan project, with no affiliation implied.</p><p>The Modern renderer is a patched DirPlayer build. <a href="/vendor/dirplayer-0.8.1/modern-source/README.md">Runtime source and build instructions</a> · <a href="/vendor/dirplayer-0.8.1/modern-source/LICENSE">GPL license</a></p></div>
         </section>
         <details id="diagnostics" class="diagnostics"><summary>Player diagnostics <span id="count">0 events</span></summary>
           <div class="runtime-options"><label>Runtime mode <select id="mode"><option value="Shockwave">Browser / Shockwave</option><option value="Projector">Original projector</option></select></label><label><input type="checkbox" id="flash" checked> Embedded Flash UI</label></div>
           <p class="note">Multiplayer connects to pigyak.com:1626 through a bridge. Your player name and game messages are sent to that server.</p>
           <div class="diagnostic-actions"><button id="inspect">Inspect VM</button><button id="test3d">Test 3D startup</button><button id="traceworld">Trace world startup</button><button id="download">Download diagnostics</button><button id="clear">Clear view</button><label><input type="checkbox" id="legacy"> Legacy interpreter on next launch</label><label><input type="checkbox" id="terrain" checked> Browser compatibility fixes</label></div>
           <details class="lingo-console"><summary>Lingo compatibility console</summary><div class="lingo-body"><label for="lingo">One expression or command per line (local VM)</label><textarea id="lingo" rows="5"></textarea><button id="runlingo">Run Lingo</button></div></details>
+          <details id="graphics-diagnostics"><summary>Graphics diagnostics</summary><button id="test-graphics-recovery" hidden>Test graphics recovery</button><pre id="render-details">No graphics samples yet.</pre></details>
           <pre id="log" aria-label="Player diagnostic log">Launch the game to capture player output.</pre>
         </details>
         <footer><span>Moon Base · An unofficial nostalgic revival</span><a href="/game/manifest.json" target="_blank" rel="noopener">Extraction manifest</a><a href="#play">Back to the Moon ↑</a></footer>

@@ -24,6 +24,7 @@
     held.delete(event.keyCode);
   }, true);
   document.addEventListener('focusin', event => { if (editing(event.target)) releaseAll(); });
+  document.addEventListener('moonbase-resolution-changing', releaseAll);
   addEventListener('blur', releaseAll);
   addEventListener('pagehide', releaseAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
