@@ -1,4 +1,16 @@
 const $ = (id) => document.getElementById(id);
+const navigation = document.querySelector('nav[aria-label="Main navigation"]');
+function updateNavigation() {
+  for (const link of navigation.querySelectorAll('a[href^="#"]')) {
+    if (link.hash === (location.hash || '#play')) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+}
+navigation.addEventListener('click', event => {
+  if (event.target.closest('a')?.hash === '#diagnostics') $('diagnostics').open = true;
+});
+addEventListener('hashchange', updateNavigation);
+updateNavigation();
 const events = [];
 let pending = [];
 let testOnLoad = false;

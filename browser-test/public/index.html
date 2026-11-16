@@ -2,35 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Moonbase · Browser test</title>
+  <meta name="theme-color" content="#120b02">
+  <meta name="description" content="Return to Moon Base, the classic Maid Marian multiplayer game. An unofficial browser port made for nostalgia, with a server hosted by Heath from Discord.">
+  <title>Moon Base · A nostalgic browser revival</title>
   <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
-  <main>
-    <header><div><p class="eyebrow">MAID MARIAN / MOONBASE</p><h1>Back on the moon.</h1>
-      <p class="intro">Original game. Browser runtime. A local compatibility test.</p></div>
-      <span class="version">DIRPLAYER 0.8.1</span></header>
-    <section class="toolbar" aria-label="Player controls">
-      <button id="start" class="primary">Launch game</button>
-      <button id="reload" disabled>Restart</button>
-      <button id="fullscreen" disabled>Fullscreen</button>
-      <label>Runtime mode <select id="mode"><option value="Shockwave">Browser / Shockwave</option><option value="Projector">Original projector</option></select></label>
-      <label class="check"><input type="checkbox" id="flash" checked> Embedded Flash UI</label>
-    </section>
-    <section class="stage-shell" aria-label="Moonbase game">
-      <div id="placeholder"><div class="moon" aria-hidden="true">◐</div><h2>Moonbase, ready to load.</h2>
-        <p>Launch the game, then click the player’s play button.<br>Click inside the game to give it keyboard focus.</p></div>
-      <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>
-    </section>
-    <div class="status-line"><span id="status" role="status">Ready · recovered original movie</span><span>TEST · LEGACY SERVER pigyak.com:1626</span></div>
-    <p class="note">Multiplayer connects to pigyak.com:1626 through a local bridge. Names and game messages are sent to that legacy server. No Windows game executable or native plug-in is launched.</p>
-    <details open><summary>Test diagnostics <span id="count">0 events</span></summary>
-      <div class="diagnostic-actions"><button id="inspect">Inspect VM</button><button id="test3d">Test 3D startup</button><button id="traceworld">Trace world startup</button><button id="download">Download diagnostics</button><button id="clear">Clear view</button><label><input type="checkbox" id="legacy"> Legacy interpreter on next launch</label><label><input type="checkbox" id="terrain" checked> Browser compatibility fixes</label></div>
-      <details><summary>Lingo compatibility console</summary><label for="lingo">One expression or command per line (local VM)</label><textarea id="lingo" rows="5" style="display:block;width:100%;box-sizing:border-box"></textarea><button id="runlingo">Run Lingo</button></details>
-      <pre id="log" aria-label="Player diagnostic log">Launch the game to capture player output.</pre>
-    </details>
-    <footer><a href="/game/manifest.json" target="_blank" rel="noopener">Extraction manifest</a><span>Desktop keyboard + mouse · preserve the original feel</span></footer>
-  </main>
+  <div class="site-wrap">
+    <header class="masthead">
+      <a class="wordmark" href="#play" aria-label="Moon Base home"><span class="wordmark-top">RETURN TO</span><span class="wordmark-title">Moon Base</span><span class="wordmark-bottom">A MULTIPLAYER WORLD · BACK IN YOUR BROWSER</span></a>
+      <div class="header-moon" aria-hidden="true"></div>
+      <p class="masthead-note">An old favourite.<br>A new way back.</p>
+    </header>
+    <div class="site-layout">
+      <aside class="sidebar">
+        <nav aria-label="Main navigation">
+          <p class="nav-heading">Moon Base</p>
+          <a href="#play" aria-current="page">Play the game</a>
+          <a href="#how-to-play">How to play</a>
+          <a href="#about">About the port</a>
+          <a href="#credits">Credits</a>
+          <p class="nav-heading">Behind the scenes</p>
+          <a href="#diagnostics">Player diagnostics</a>
+          <a href="https://github.com/SebastianBoender/MoonbaseMMOBrowserPort" target="_blank" rel="noopener">Source on GitHub ↗</a>
+          <p class="nav-heading">The original creators</p>
+          <a href="http://www.maidmarian.com/" target="_blank" rel="noopener">MaidMarian.com ↗</a>
+        </nav>
+        <p class="sidebar-note">Made for the memories.<br>See you on the Moon.</p>
+      </aside>
+      <main class="parchment">
+        <section id="play" class="play-section" aria-labelledby="page-title">
+          <div class="section-heading"><h1 id="page-title">Moon Base</h1><span class="small-tag">BROWSER EDITION</span></div>
+          <p class="intro">Take the moon buggy for a spin. Try the rocket pack. Meet old friends on the surface of the Moon. The classic multiplayer world is back in your browser.</p>
+          <section class="toolbar" aria-label="Player controls">
+            <button id="start" class="primary">Play Moon Base</button>
+            <button id="reload" disabled>Restart</button>
+            <button id="fullscreen" disabled>Fullscreen</button>
+          </section>
+          <section class="stage-shell" aria-label="Moonbase game">
+            <div id="placeholder"><div class="welcome-moon" aria-hidden="true"></div><p class="welcome-kicker">YOUR NEXT SMALL STEP</p><h2>Welcome back to the Moon.</h2><p>Select <strong>Play Moon Base</strong>, then click Play inside the player.</p><p class="welcome-caption">Original world. Familiar faces. A little nostalgia.</p></div>
+            <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>
+          </section>
+          <div class="status-line"><span id="status" role="status">Ready when you are.</span><span>MULTIPLAYER · SERVER BY HEATH</span></div>
+          <p class="player-hint">Click inside the game to use your keyboard. A desktop keyboard is recommended; turn your phone sideways for a larger view.</p>
+        </section>
+        <section class="article-section" id="how-to-play" aria-labelledby="controls-heading">
+          <h2 id="controls-heading">A quick refresher</h2>
+          <dl class="controls"><div><dt>Arrow keys</dt><dd>Walk, or steer the moon buggy.</dd></div><div><dt>Ctrl</dt><dd>Fire up your rocket pack.</dd></div><div><dt>Alt</dt><dd>Show off your dance moves.</dd></div><div><dt>Space / +</dt><dd>Brake / leave the buggy.</dd></div><div><dt>Type &amp; Enter</dt><dd>Say hello. Escape returns to the game.</dd></div></dl>
+          <p class="small-print">Rocket pack staying grounded? Try a lower setting on the in-game gravity slider.</p>
+        </section>
+        <section class="article-section" id="about" aria-labelledby="about-heading">
+          <h2 id="about-heading">Back for the memories</h2>
+          <p>Remember wandering across the Moon, chatting with strangers and seeing how high the rocket pack could take you? This unofficial project brings the original Moon Base game to modern browsers, without the old Shockwave plug-in.</p>
+          <p>We made the browser port for nostalgic reasons. The original game, world and artwork belong to their respective creators. This is a community revival, with compatibility work still in progress.</p>
+        </section>
+        <section class="article-section credits" id="credits" aria-labelledby="credits-heading">
+          <h2 id="credits-heading">The people who made it possible</h2>
+          <div class="credit"><h3>Original game · Maid Marian</h3><p>Moon Base was created by <a href="http://www.maidmarian.com/" target="_blank" rel="noopener">Maid Marian Entertainment</a>. All credit for the original game goes to them. Thank you for the memories.</p></div>
+          <div class="credit"><h3>Multiplayer server · Heath</h3><p>Special thanks to <strong>Heath from Discord</strong> for hosting the multiplayer server and giving us a place to meet again.</p></div>
+          <div class="credit"><h3>Browser port · The nostalgia project</h3><p>We adapted the game for modern browsers using <a href="https://github.com/igorlira/dirplayer-rs" target="_blank" rel="noopener">DirPlayer</a>. This is an unofficial fan project, with no affiliation implied.</p></div>
+        </section>
+        <details id="diagnostics" class="diagnostics"><summary>Player diagnostics <span id="count">0 events</span></summary>
+          <div class="runtime-options"><label>Runtime mode <select id="mode"><option value="Shockwave">Browser / Shockwave</option><option value="Projector">Original projector</option></select></label><label><input type="checkbox" id="flash" checked> Embedded Flash UI</label></div>
+          <p class="note">Multiplayer connects to pigyak.com:1626 through a bridge. Your player name and game messages are sent to that server.</p>
+          <div class="diagnostic-actions"><button id="inspect">Inspect VM</button><button id="test3d">Test 3D startup</button><button id="traceworld">Trace world startup</button><button id="download">Download diagnostics</button><button id="clear">Clear view</button><label><input type="checkbox" id="legacy"> Legacy interpreter on next launch</label><label><input type="checkbox" id="terrain" checked> Browser compatibility fixes</label></div>
+          <details class="lingo-console"><summary>Lingo compatibility console</summary><div class="lingo-body"><label for="lingo">One expression or command per line (local VM)</label><textarea id="lingo" rows="5"></textarea><button id="runlingo">Run Lingo</button></div></details>
+          <pre id="log" aria-label="Player diagnostic log">Launch the game to capture player output.</pre>
+        </details>
+        <footer><span>Moon Base · An unofficial nostalgic revival</span><a href="/game/manifest.json" target="_blank" rel="noopener">Extraction manifest</a><a href="#play">Back to the Moon ↑</a></footer>
+      </main>
+    </div>
+  </div>
 </body>
 </html>

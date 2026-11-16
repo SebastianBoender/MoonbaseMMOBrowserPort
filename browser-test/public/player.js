@@ -1,4 +1,10 @@
 (() => {
+  // Preserve the original 800 × 550 stage and fit the whole player to a
+  // smaller iframe. Canvas pointer coordinates and overlays use its bounds.
+  const fitStage = () => document.documentElement.style.setProperty('--game-scale',
+    Math.min(1, document.documentElement.clientWidth / 800, document.documentElement.clientHeight / 550));
+  new ResizeObserver(fitStage).observe(document.documentElement);
+  fitStage();
   const params = new URLSearchParams(location.search);
   let sent = 0;
   const serialize = (value) => {
