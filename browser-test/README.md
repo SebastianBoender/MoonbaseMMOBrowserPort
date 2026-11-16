@@ -153,6 +153,14 @@ Browser verification covered stationary parking, straight forward drive with zer
 
 For a 20-second read-only trace, enter `@physics` in the local Lingo diagnostics console and hold game keys in the stage. It samples actual input, gravity, thrust, and body positions/velocities without changing them. At gravity 125, a three-second Ctrl test rose from Y −664 to Y +689 and landed back at the original floor. The user's reported failure had gravity 234: the original impulse (100 / mass 30 per FrameMod) only overcomes gravity below about 151.5 with the authored 0.022 timestep. Lower the gravity slider for takeoff; the adapter does not silently change the original rocket power.
 
+### Retro site layout and mobile sizing
+
+The outer site follows the supplied old Maid Marian layout: black surroundings, a wood-toned masthead, amber textured content panel, serif type, orange links, left navigation, and dotted section dividers. Credits explicitly name Maid Marian Entertainment as the original creator, link to `http://www.maidmarian.com/`, thank Heath from Discord for hosting multiplayer, and describe this project as an unofficial port made for nostalgia. DirPlayer is also credited.
+
+Below 600px the navigation wraps above the content. The game frame keeps its 800:550 aspect ratio, while the original 800 × 550 player scales to fit inside it. The pointer and chat/nameplate overlays continue to use the canvas's rendered bounds. This makes the site and stage fit a phone; it does not add touch movement controls to the keyboard-based game. Runtime options and diagnostics are collapsed below the public content.
+
+Browser verification covered the desktop layout, creator/server credits and links, diagnostic navigation, player launch through the original login screen, and 390px/320px phone viewports with no horizontal document overflow. Screenshots: `verification/retro-site-desktop.png` and `verification/retro-site-mobile.png`.
+
 ## Ubuntu deployment
 
 See [deploy/README.md](deploy/README.md) and run `./browser-test/deploy/deploy.sh root@YOUR_VPS_IP` from the project directory. The default domain is moonbasemmo.com. The installer replaces the authorized HMC frontend, configures automatic HTTPS through Caddy, and manages a loopback-only game/SMUS bridge through systemd. Production mode supports the HTTPS origin and disables shared browser logs; it does not install a replacement multiplayer backend.
