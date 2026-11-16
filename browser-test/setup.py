@@ -147,7 +147,35 @@ def prepare_diagnostics():
     print("Prepared observational VM diagnostics (official bundle retained)")
 
 
+def prepare_modern():
+    import gzip
+    import shutil
+    source = ROOT / "runtime-modern"
+    manifest = json.loads((source / "manifest.json").read_text())
+    packed = (source / "dirplayer-modern.js.gz").read_bytes()
+    if hashlib.sha256(packed).hexdigest() != manifest["archive_sha256"]:
+        raise ValueError("Modern runtime archive checksum mismatch")
+    if hashlib.sha256((source / "patch_runtime.py").read_bytes()).hexdigest() != manifest["patch_sha256"]:
+        raise ValueError("Modern runtime source patch changed: rebuild the runtime")
+    data = gzip.decompress(packed)
+    if hashlib.sha256(data).hexdigest() != manifest["bundle_sha256"]:
+        raise ValueError("Modern runtime bundle checksum mismatch")
+    vendor = ROOT / "public" / "vendor" / f"dirplayer-{VERSION}"
+    (vendor / "dirplayer-modern.js").write_bytes(data)
+    (ROOT / "public" / "game" / "modern-runtime.json").write_text(json.dumps(manifest, indent=2)+"\n")
+    # Corresponding source and build recipe accompany the derived GPL runtime.
+    target = vendor / "modern-source"
+    target.mkdir(exist_ok=True)
+    archive = source / "upstream-source.tar.gz"
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != manifest["source_sha256"]:
+        raise ValueError("Modern upstream source checksum mismatch")
+    for name in ["upstream-source.tar.gz", "patch_runtime.py", "build.sh", "package_runtime.py", "manifest.json", "LICENSE", "README.md"]:
+        shutil.copyfile(source / name, target / name)
+    print("Verified and installed isolated Modern runtime with corresponding source")
+
+
 if __name__ == "__main__":
     prepare_runtime()
     extract_movie()
     prepare_diagnostics()
+    prepare_modern()

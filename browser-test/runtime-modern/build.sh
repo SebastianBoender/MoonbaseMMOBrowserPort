@@ -5,6 +5,7 @@ ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 COMMIT=7f632b416b55ec351341feda4db2a444564217aa
 [[ $(rustc --version) == 'rustc 1.91.1 '* ]] || { echo 'Install Rust 1.91.1 and target wasm32-unknown-unknown.' >&2; exit 1; }
 [[ $(wasm-bindgen --version) == 'wasm-bindgen 0.2.108' ]] || { echo 'Install wasm-bindgen-cli 0.2.108.' >&2; exit 1; }
+mkdir -p "$ROOT/../.cache"
 BUILD_DIR=$(mktemp -d "$ROOT/../.cache/modern-build.XXXXXXXX")
 python3 - "$ROOT/upstream-source.tar.gz" "$BUILD_DIR" <<'PY'
 import hashlib,sys,tarfile

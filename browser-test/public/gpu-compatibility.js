@@ -7,7 +7,8 @@
   const programs = new WeakMap(), locations = new WeakMap(), contexts = new WeakMap(), viewports = new WeakMap(), framebuffers = new WeakMap(), viewportVersions = new WeakMap(), drawnVersions = new WeakMap();
   const state = { shaders: [], draws: {}, patches: [], frameTimes:[], resources:{framebuffers:0,renderbuffers:0,textures:0} };
   const modern=new URLSearchParams(location.search).get('client')==='modern';
-  let lastDraw=0;
+  let lastDraw=0, resourceEpoch=0;
+  state.resetResources=()=>{resourceEpoch++;state.resources={framebuffers:0,renderbuffers:0,textures:0};};
   state.resetTimings=()=>{lastDraw=0;state.frameTimes=[];};
   const trace = new URLSearchParams(location.search).get('gpuTrace') === '1';
   window.moonbaseGPU = state;
@@ -54,9 +55,9 @@
     };
   }
   if(modern)for(const [kind,create,remove] of [['framebuffers','createFramebuffer','deleteFramebuffer'],['renderbuffers','createRenderbuffer','deleteRenderbuffer'],['textures','createTexture','deleteTexture']]){
-    const live=new WeakSet(), allocate=proto[create], dispose=proto[remove];
-    proto[create]=function(...args){const resource=allocate.apply(this,args);if(resource){live.add(resource);state.resources[kind]++;}return resource;};
-    proto[remove]=function(resource){if(resource&&live.has(resource)){live.delete(resource);state.resources[kind]--;}return dispose.call(this,resource);};
+    const live=new WeakMap(), allocate=proto[create], dispose=proto[remove];
+    proto[create]=function(...args){const resource=allocate.apply(this,args);if(resource&&this.canvas?.getAttribute('data-dp-stage')==='1'){live.set(resource,resourceEpoch);state.resources[kind]++;}return resource;};
+    proto[remove]=function(resource){if(resource&&live.has(resource)){if(live.get(resource)===resourceEpoch)state.resources[kind]--;live.delete(resource);}return dispose.call(this,resource);};
   }
   }
 })();

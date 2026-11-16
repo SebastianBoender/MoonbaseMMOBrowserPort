@@ -74,6 +74,35 @@ def apply(root):
                                 width as f32 / crate::player::stage::stage_scale(player).0 as f32,
                                 height as f32 / crate::player::stage::stage_scale(player).1 as f32,
 ''')
+    replace(renderer, '                    // Text member: render the text using specified font', '''                    // Modern text textures use logical source dimensions.
+                    let modern_text = player.external_params.iter().any(|(k,v)| k == "moonbaseModern" && v == "1");
+                    let (sx, sy) = crate::player::stage::stage_scale(player);
+                    let sprite_rect = if modern_text { IntRect::from(
+                        (sprite_rect.left as f64 / sx).round() as i32,
+                        (sprite_rect.top as f64 / sy).round() as i32,
+                        (sprite_rect.right as f64 / sx).round() as i32,
+                        (sprite_rect.bottom as f64 / sy).round() as i32,
+                    ) } else { sprite_rect.clone() };
+                    // Text member: render the text using specified font''')
+    # Legacy text is rasterized at authored size, then composited into the HD
+    # stage. This avoids upstream's high-DPI field clipping and keeps its font.
+    replace(renderer, '        let scale = scale_x.min(scale_y);', '''        let legacy_text = player.external_params.iter().any(|(k,v)| k == "moonbaseModern" && v == "1");
+        let is_field = player.movie.cast_manager.find_member_by_ref(&cache_key.member_ref)
+            .map(|m| matches!(m.member_type, CastMemberType::Field(_))).unwrap_or(false);
+        let (width, height, wrap_width) = if legacy_text && is_field {
+            ((width as f64 / scale_x).round().max(1.0) as u32,
+             (height as f64 / scale_y).round().max(1.0) as u32,
+             (wrap_width as f64 / scale_x).round().max(1.0) as u32)
+        } else { (width, height, wrap_width) };
+        let scale = if legacy_text { 1.0 } else { scale_x.min(scale_y) };''')
+    replace(renderer, 'let actual_h = cached.height as i32;', '''let legacy_text = player.external_params.iter().any(|(k,v)| k == "moonbaseModern" && v == "1");
+                    let actual_h = if legacy_text { (cached.height as f64 * crate::player::stage::stage_scale(player).1).round() as i32 } else { cached.height as i32 };''')
+    replace(renderer, '                        Some((tex, _actual_w, actual_h)) => {', '''                        Some((tex, _actual_w, actual_h)) => {
+                            let legacy_text = player.external_params.iter().any(|(k,v)| k == "moonbaseModern" && v == "1");
+                            let actual_h = if legacy_text { (actual_h as f64 * crate::player::stage::stage_scale(player).1).round() as u32 } else { actual_h };''')
+    replace(renderer, '(field_member.width as u32).min(width)', '''(if player.external_params.iter().any(|(k,v)| k == "moonbaseModern" && v == "1") {
+                            (field_member.width as f64 * crate::player::stage::stage_scale(player).0).round() as u32
+                        } else { field_member.width as u32 }).min(width)''')
     api = root / 'dirplayer-js-api/index.js'
     for name, argument, kind in [('onMovieLoaded','result','movie-loaded'), ('onFrameChanged','frame','frame'), ('onScriptError','err','script-error'), ('onScopeListChanged','scopeList','scope-list'), ('onDebugMessage','message','debug-message')]:
         old = f'export function {name}({argument}) {{'

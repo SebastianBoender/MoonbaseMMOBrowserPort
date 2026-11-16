@@ -27,13 +27,15 @@
     canvas.addEventListener('webglcontextlost',event=>{
       if(!modern)return;
       event.preventDefault();generation++;busy=false;error=true;releaseInput();
+      window.moonbaseGPU?.resetResources?.();
       message='Graphics context lost. Waiting to restore Original quality…';send();
     });
     canvas.addEventListener('webglcontextrestored',()=>{
       if(!modern)return;
       try{
-        window.__vm.set_renderer_backend('webgl2');lastCanvas=null;limits=null;
-        if(window.moonbaseGPU)window.moonbaseGPU.resources={framebuffers:0,renderbuffers:0,textures:0};
+        // DirPlayer's earlier native listener rebuilds this same canvas.
+        // Reuse it; creating another backend would allocate a second context.
+        limits=null;
         selected=requested='original';
         apply('original','Graphics restored at Original quality.');
       }catch{message='Graphics could not be restored. Relaunch the game to recover.';error=true;send();}
@@ -93,6 +95,7 @@
   });
   addEventListener('moonbase-render-error',event=>{
     if(!modern||!loaded||!/\[3D\].*Render failed|incomplete 3D framebuffer/.test(String(event.detail)))return;
+    if(selected==='original'&&!busy&&error)return;
     const restore=busy?selected:'original';
     generation++;busy=false;requested=restore;error=true;
     releaseInput();

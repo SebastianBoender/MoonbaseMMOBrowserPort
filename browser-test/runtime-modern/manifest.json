@@ -1,0 +1,26 @@
+{
+  "upstream_version": "0.8.1",
+  "upstream_commit": "7f632b416b55ec351341feda4db2a444564217aa",
+  "source_sha256": "c261d07dfc55555abaac63a9b7450f8d5d66696220633fbc30b2ab7177a55a53",
+  "source_url": "https://github.com/igorlira/dirplayer-rs/tree/7f632b416b55ec351341feda4db2a444564217aa",
+  "bundle_sha256": "4406263582c668c45afc99fd8a38f379545e8815b496fe7cebb669d58ff151c1",
+  "archive_sha256": "9c2b0526662a260c8cecbf024f63bd364db2a1ff9d8803d56081053d297d9ee5",
+  "patch_sha256": "599a7fb6508a518b467fc563fc20646d67961ebc4a9e86bee44b11ba086f38e5",
+  "cargo_lock_sha256": "0be0d949624679b5d0f4bfa1d0ec65dd59b7bbeabdbfecc91438fa3248d0f641",
+  "npm_lock_sha256": "d245108de43a4e0ae27c811cab0d1957c7774eb426b8568bfee2242bf58c5d44",
+  "toolchain": {
+    "rust": "1.91.1",
+    "wasm_bindgen": "0.2.108",
+    "profile": "release (opt-level=3, fat LTO)",
+    "node": "v22.22.2",
+    "npm": "10.9.7"
+  },
+  "changes": [
+    "fixed logical stage for moonbaseModern=1",
+    "transactional FBO replacement and deletion",
+    "authored camera overlay coordinates",
+    "legacy text rasterized at authored size",
+    "observational diagnostics callbacks"
+  ],
+  "license": "GPL-3.0-only"
+}

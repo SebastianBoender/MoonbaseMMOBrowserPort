@@ -9,7 +9,7 @@ DOMAIN=$(cat "$SOURCE/domain.txt")
 source /etc/os-release
 [[ "$ID" == ubuntu ]] || { echo 'This installer targets Ubuntu 24.04 or newer.' >&2; exit 1; }
 dpkg --compare-versions "$VERSION_ID" ge 24.04 || { echo 'Ubuntu 24.04+ required.' >&2; exit 1; }
-[[ -f "$SOURCE/public/game/moonbase-browser.dir" && -f "$SOURCE/public/vendor/dirplayer-0.8.1/dirplayer-diagnostic.js" ]] || { echo 'Incomplete deployment package.' >&2; exit 1; }
+[[ -f "$SOURCE/public/game/moonbase-browser.dir" && -f "$SOURCE/public/vendor/dirplayer-0.8.1/dirplayer-diagnostic.js" && -f "$SOURCE/public/vendor/dirplayer-0.8.1/dirplayer-modern.js" && -f "$SOURCE/public/game/modern-runtime.json" ]] || { echo 'Incomplete deployment package.' >&2; exit 1; }
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends python3 caddy curl ca-certificates

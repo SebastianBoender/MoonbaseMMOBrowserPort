@@ -52,5 +52,5 @@ test('GPU allocation failure during a switch rolls back to the working target',a
 test('context loss releases the transition and recovery recreates graphics at Original quality',async()=>{
   const e=environment('modern','1080p');await e.load();let prevented=false;
   e.canvasEvents.webglcontextlost({preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(e.messages.at(-1).error,true);
-  e.canvasEvents.webglcontextrestored();await e.flush();assert.ok(e.calls.some(c=>c[0]==='restore'));assert.deepEqual(e.calls.at(-1),[800,550]);assert.equal(e.messages.at(-1).selected,'original');
+  e.canvasEvents.webglcontextrestored();await e.flush();assert.equal(e.calls.some(c=>c[0]==='restore'),false);assert.deepEqual(e.calls.at(-1),[800,550]);assert.equal(e.messages.at(-1).selected,'original');
 });
