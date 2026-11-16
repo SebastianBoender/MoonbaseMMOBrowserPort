@@ -149,6 +149,8 @@ The native Havok mesh-contact and suspension implementation sends the Y-up cart 
 
 This is an interim vehicle controller: articulated suspension, pitch/roll over terrain, rock/ramp collisions, and collisions with other bodies are not reproduced for the cart. Walking and jetpack still use their existing physics path. Chat passes +/= to the original vehicle exit handler while driving.
 
+Browser verification covered stationary parking, straight forward drive with zero yaw, reverse, steering, spacebar braking (speed reduced to 0.0821), +/= exit back to Walking, re-entry, and jetpack ascent/landing beside the parked cart. Across the 20-second post-exit trace the cart stayed at `(2100, -682.1325, -1106.6247)` with zero velocity. The viewport read rotation 0 and skew 0. Screenshot: `verification/cart-and-viewport-fixed.png`.
+
 For a 20-second read-only trace, enter `@physics` in the local Lingo diagnostics console and hold game keys in the stage. It samples actual input, gravity, thrust, and body positions/velocities without changing them. At gravity 125, a three-second Ctrl test rose from Y −664 to Y +689 and landed back at the original floor. The user's reported failure had gravity 234: the original impulse (100 / mass 30 per FrameMod) only overcomes gravity below about 151.5 with the authored 0.022 timestep. Lower the gravity slider for takeoff; the adapter does not silently change the original rocket power.
 
 ## Ubuntu deployment
