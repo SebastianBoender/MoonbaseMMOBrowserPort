@@ -9,3 +9,27 @@ The first compiled trial (before the discrete-contact/active changes) did not ma
 This does not establish that the emulator's remaining convex contact, inertia, damping or dashpot/world-scale behavior matches the original Havok Xtra.
 
 The next trial uses the native linear-dashpot anchor convention (zero means COM; nonzero is model-local), applies inverse mass once, and applies dashpot impulses after position integration. At dt 0.022, mass 10/2, COM A Y=28.6306, initial body Y=-678/-668 and pointB Y=-1, this predicts native velocities -3.2574/16.2869, then -8.9928/28.4806 and -14.4072/39.0856. Native half-dt and +1 initial separation captures independently check the time/position dependence. These calculations explain the first three free-suspension samples; compiled-runtime and terrain-contact comparisons remain required.
+
+## Measured browser trials
+
+| Trial | Result at 90 forward steps | Accepted? |
+| --- | --- | --- |
+| 4: native linear dashpot/order | First 23 steps match within 0.001; first ground impact diverges | No |
+| 5: COM rotation, angular units, impulse-only normal response | Suspension aligns, but chassis falls through ground | No |
+| 6: hull vertices clipped to terrain faces, contact midpoint, coupled sticking friction | Car Z=-113.9034, Y=-699.3579; native Z=-133.9516, Y=-697.0219 | No: travel is 3.54% too far and contact response differs |
+
+The corresponding measured browser traces live beside the native references in `tests/fixtures/native-driving`. `tests/compare_driving.py` checks complete, matching input/timestep traces and compares positions, velocities and axis-angle rotations. The comparison deliberately fails on the first contact at step 24; compilation and a plausible screenshot are not parity checks.
+
+Native material probes show 0.5 friction on Car, Spring and GroundShape. The first impact has a tangential/normal impulse ratio of 0.5. Changing either the chassis or ground material to 0.25 changes that ratio to 0.25. The research patch now tests the lower-material rule, coupled sliding friction and zero-gravity scene recognition (trial 7, not yet measured).
+
+Native first-contact position is `(2173.82,-713.0021,-583.0064)`; the trial-6 support-vertex solver chooses `(2197.9205,-713.0021,-544.8195)`. Both lie on the touching face, but their different moment arms change the response. Reproducing Havok's contact-feature selection remains necessary for deterministic trace parity. Do not hardcode a contact-point scale to fit this single impact.
+
+To inspect a compiled experimental bundle without changing production assets:
+
+```bash
+python3 browser-test/tests/build_driving_fixture.py /tmp/moonbase-driving-browser \
+  --native --input forward --frames 90 --runtime-bundle /absolute/path/to/dirplayer-polyfill.js
+python3 /tmp/moonbase-driving-browser/serve.py --port 8081
+```
+
+Open the private fixture, use Player diagnostics → Trace world startup, click Play, then run `@export-driving` in its Lingo console. The movie captures each step before the next one; browser polling cannot drop samples. Exported `Driving row` messages have the same nine fields as the basic native trace. The fixture intentionally reuses the fallback-only `browserCartYaw` variable as its private trace list; no published runtime uses that representation.

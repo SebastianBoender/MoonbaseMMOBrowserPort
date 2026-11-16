@@ -1,6 +1,182 @@
 --- a/vm-rust/src/player/handlers/datum_handlers/cast_member/havok_physics.rs
 +++ b/vm-rust/src/player/handlers/datum_handlers/cast_member/havok_physics.rs
-@@ -1293,6 +1293,7 @@
+@@ -672,7 +672,7 @@
+ /// band and projects onto the face, emit a contact there. Only the single deepest
+ /// contact per body is kept by the caller.
+ fn detect_hull_contacts(
+-    meshes: &[CollisionMesh], hull_world: &[V3], body_idx: usize, tolerance: f64,
++    meshes: &[CollisionMesh], hull_world: &[V3], body_idx: usize, tolerance: f64, native: bool,
+     bodies: &[crate::player::cast_member::HavokRigidBody],
+ ) -> Vec<CollisionContact> {
+     let mut contacts = Vec::new();
+@@ -737,7 +737,14 @@
+             let mut best_pt = [0.0; 3];
+             for &w in hull_world {
+                 let d = v3_dot(v3_sub(w, v0), normal);
+-                if d < best_dist { best_dist = d; best_pt = w; }
++                if native {
++                    let projected = v3_sub(w, v3_scale(normal, d));
++                    if !pt_in_tri_3d(projected, v0, v1, v2) { continue; }
++                }
++                // Stable seed for coplanar support vertices (positive X/Z).
++                let tied = native && (d-best_dist).abs() < 1e-7
++                    && (w[0] > best_pt[0] || (w[0] == best_pt[0] && w[2] > best_pt[2]));
++                if d < best_dist - if native { 1e-7 } else { 0.0 } || tied { best_dist = d; best_pt = w; }
+             }
+             // Touching within `tolerance`; reject only clearly-through-the-backface
+             // hits (deeper than the hull itself — see `deep_reject`).
+@@ -751,7 +758,7 @@
+                 contacts.push(CollisionContact {
+                     body_a: body_idx,
+                     body_b: mesh.body_index,
+-                    point: best_pt,
++                    point: if native { v3_scale(v3_add(best_pt, proj), 0.5) } else { best_pt },
+                     normal,
+                     depth,
+                     mesh_index: Some(mesh_idx),
+@@ -1013,7 +1020,7 @@
+         let rb_b = &state.rigid_bodies[b_idx];
+         // Product restitution and friction (matches Director's observed behaviour
+         // for the Properties demo: Ball2 bounce ratio ~0.70 with rest=0.75 * 1.0)
+-        ((rb_a.friction * rb_b.friction), (rb_a.restitution * rb_b.restitution))
++        ((if is_moonbase_vehicle_scene(state) { rb_a.friction.min(rb_b.friction) } else { rb_a.friction * rb_b.friction }), (rb_a.restitution * rb_b.restitution))
+     } else {
+         ((rb_a.friction * GROUND_FRICTION), (rb_a.restitution * GROUND_RESTITUTION))
+     };
+@@ -1031,6 +1038,36 @@
+     let target_vn = -eff_restitution * vn;
+     let eff_inv_mass = compute_effective_inverse_mass(state, contact);
+     if eff_inv_mass < 1e-10 { return [0.0; 3]; }
++
++    if is_moonbase_vehicle_scene(state) && friction > 0.0 {
++        let mut k = [0.0; 9];
++        for body_index in [Some(contact.body_a), contact.body_b].into_iter().flatten() {
++            let rb = &state.rigid_bodies[body_index];
++            if rb.pinned || rb.inverse_mass <= 0.0 { continue; }
++            let r = v3_sub(contact.point, body_transform_point(rb, rb.center_of_mass));
++            for col in 0..3 {
++                let mut axis = [0.0; 3]; axis[col] = 1.0;
++                let response = v3_add(v3_scale(axis, rb.inverse_mass),
++                    v3_cross(mat3_transform(world_inv_inertia(rb), v3_cross(r, axis)), r));
++                for row in 0..3 { k[row*3+col] += response[row]; }
++            }
++        }
++        let target = v3_sub(v3_scale(contact.normal, target_vn), rel_vel);
++        let sticking = mat3_transform(mat3_inverse(k), target);
++        let normal_part = v3_dot(sticking, contact.normal);
++        let tangent = v3_sub(sticking, v3_scale(contact.normal, normal_part));
++        if normal_part >= 0.0 && v3_len(tangent) <= friction * normal_part {
++            return sticking;
++        }
++        // A normal impulse can create slip through angular motion even if
++        // the incoming centre velocity has no tangent component. Resolve the
++        // coupled sliding direction, rather than testing the old velocity.
++        if normal_part > 0.0 && v3_len(tangent) > 1e-10 {
++            let direction = v3_add(contact.normal, v3_scale(v3_normalized(tangent), friction));
++            let response = v3_dot(contact.normal, mat3_transform(k, direction));
++            if response > 1e-10 { return v3_scale(direction, (target_vn-vn)/response); }
++        }
++    }
+ 
+     let normal_impulse_mag = (target_vn - vn) / eff_inv_mass;
+     let mut impulse = v3_scale(contact.normal, normal_impulse_mag);
+@@ -1060,6 +1097,7 @@
+ /// Apply impulse to both bodies. Body A gets +impulse, Body B gets -impulse.
+ /// From PPC: applyImpulsePair (0x5B540)
+ fn apply_impulse_pair(state: &mut HavokPhysicsState, impulse: V3, contact: &CollisionContact) {
++    let moonbase = is_moonbase_vehicle_scene(state);
+     if v3_len_sq(impulse) < 1e-20 { return; }
+ 
+     // Body A
+@@ -1067,7 +1105,7 @@
+         let rb = &mut state.rigid_bodies[contact.body_a];
+         if !rb.pinned && rb.inverse_mass > 0.0 {
+             rb.linear_velocity = v3_add(rb.linear_velocity, v3_scale(impulse, rb.inverse_mass));
+-            let r = v3_sub(contact.point, rb.position);
++            let r = v3_sub(contact.point, if moonbase { body_transform_point(rb, rb.center_of_mass) } else { rb.position });
+             let t = v3_cross(r, impulse);
+             let ang_impulse = mat3_transform(world_inv_inertia(rb), t);
+             rb.angular_velocity = v3_add(rb.angular_velocity, ang_impulse);
+@@ -1079,7 +1117,7 @@
+         if !rb.pinned && rb.inverse_mass > 0.0 {
+             let neg = v3_neg(impulse);
+             rb.linear_velocity = v3_add(rb.linear_velocity, v3_scale(neg, rb.inverse_mass));
+-            let r = v3_sub(contact.point, rb.position);
++            let r = v3_sub(contact.point, if moonbase { body_transform_point(rb, rb.center_of_mass) } else { rb.position });
+             let t = v3_cross(r, neg);
+             let ang_impulse = mat3_transform(world_inv_inertia(rb), t);
+             rb.angular_velocity = v3_add(rb.angular_velocity, ang_impulse);
+@@ -1090,6 +1128,7 @@
+ /// Apply penetration-correction driving impulse.
+ /// From PPC: applyDrivingImpulse (0x5AD90)
+ fn apply_driving_impulse(state: &mut HavokPhysicsState, contact: &CollisionContact, driving_scale: f64) {
++    let moonbase = is_moonbase_vehicle_scene(state);
+     if driving_scale <= 0.0 { return; }
+     let scaled_factor = 2.0 * driving_scale;
+     let t = (scaled_factor - contact.depth) / scaled_factor;
+@@ -1106,7 +1145,7 @@
+         if !rb.pinned && rb.inverse_mass > 0.0 {
+             let scaled = v3_scale(driving_impulse, rb.mass);
+             rb.linear_velocity = v3_add(rb.linear_velocity, v3_scale(scaled, rb.inverse_mass));
+-            let r = v3_sub(contact.point, rb.position);
++            let r = v3_sub(contact.point, if moonbase { body_transform_point(rb, rb.center_of_mass) } else { rb.position });
+             rb.angular_velocity = v3_add(rb.angular_velocity, mat3_transform(world_inv_inertia(rb), v3_cross(r, scaled)));
+         }
+     }
+@@ -1116,7 +1155,7 @@
+         if !rb.pinned && rb.inverse_mass > 0.0 {
+             let neg_scaled = v3_neg(v3_scale(driving_impulse, rb.mass));
+             rb.linear_velocity = v3_add(rb.linear_velocity, v3_scale(neg_scaled, rb.inverse_mass));
+-            let r = v3_sub(contact.point, rb.position);
++            let r = v3_sub(contact.point, if moonbase { body_transform_point(rb, rb.center_of_mass) } else { rb.position });
+             rb.angular_velocity = v3_add(rb.angular_velocity, mat3_transform(world_inv_inertia(rb), v3_cross(r, neg_scaled)));
+         }
+     }
+@@ -1124,12 +1163,16 @@
+ 
+ /// Compute relative velocity at contact point (velA - velB).
+ fn compute_rel_velocity(state: &HavokPhysicsState, contact: &CollisionContact) -> V3 {
++    let point_velocity = |rb: &crate::player::cast_member::HavokRigidBody| {
++        let center = if is_moonbase_vehicle_scene(state) { body_transform_point(rb, rb.center_of_mass) } else { rb.position };
++        v3_add(rb.linear_velocity, v3_cross(rb.angular_velocity, v3_sub(contact.point, center)))
++    };
+     let vel_a = if !state.rigid_bodies[contact.body_a].pinned {
+-        get_point_velocity(&state.rigid_bodies[contact.body_a], contact.point)
++        point_velocity(&state.rigid_bodies[contact.body_a])
+     } else { [0.0; 3] };
+     let vel_b = if let Some(b_idx) = contact.body_b {
+         if !state.rigid_bodies[b_idx].pinned {
+-            get_point_velocity(&state.rigid_bodies[b_idx], contact.point)
++            point_velocity(&state.rigid_bodies[b_idx])
+         } else { [0.0; 3] }
+     } else { [0.0; 3] };
+     v3_sub(vel_a, vel_b)
+@@ -1142,13 +1185,14 @@
+ /// Effective inverse mass at contact along normal.
+ /// From C# Collision.cs — ComputeEffectiveInverseMass
+ fn compute_effective_inverse_mass(state: &HavokPhysicsState, contact: &CollisionContact) -> f64 {
++    let moonbase = is_moonbase_vehicle_scene(state);
+     let n = contact.normal;
+     let mut result = 0.0;
+     // Body A
+     let rb_a = &state.rigid_bodies[contact.body_a];
+     if !rb_a.pinned {
+         result += rb_a.inverse_mass;
+-        let r = v3_sub(contact.point, rb_a.position);
++        let r = v3_sub(contact.point, if moonbase { body_transform_point(rb_a, rb_a.center_of_mass) } else { rb_a.position });
+         let rxn = v3_cross(r, n);
+         let ang_contrib = v3_cross(mat3_transform(world_inv_inertia(rb_a), rxn), r);
+         result += v3_dot(n, ang_contrib);
+@@ -1158,7 +1202,7 @@
+         let rb_b = &state.rigid_bodies[b_idx];
+         if !rb_b.pinned {
+             result += rb_b.inverse_mass;
+-            let r = v3_sub(contact.point, rb_b.position);
++            let r = v3_sub(contact.point, if moonbase { body_transform_point(rb_b, rb_b.center_of_mass) } else { rb_b.position });
+             let rxn = v3_cross(r, n);
+             let ang_contrib = v3_cross(mat3_transform(world_inv_inertia(rb_b), rxn), r);
+             result += v3_dot(n, ang_contrib);
+@@ -1293,6 +1337,7 @@
  /// Apply linear dashpot forces.
  /// From x86: sub_1001CAF0 — timeScale = dt * 151.0, direct impulse application.
  fn apply_linear_dashpots(state: &mut HavokPhysicsState, dt: f64) {
@@ -8,7 +184,7 @@
      let time_scale = dt * 151.0;
      let post_damping = 0.001;
      for di in 0..state.linear_dashpots.len() {
-@@ -1308,9 +1309,9 @@
+@@ -1308,9 +1353,9 @@
          let idx_a = match find_body_idx(state, rb_a_name) { Some(i) => i, None => continue };
          let idx_b = rb_b_name.as_ref().and_then(|n| find_body_idx(state, *n));
  
@@ -20,7 +196,7 @@
          } else {
              (point_b_local, [0.0; 3])
          };
-@@ -1324,10 +1325,11 @@
+@@ -1324,10 +1369,11 @@
              let rb = &mut state.rigid_bodies[idx_a];
              if !rb.pinned && rb.inverse_mass > 0.0 {
                  let neg = v3_neg(force);
@@ -34,7 +210,7 @@
                  let t = v3_cross(r, impulse);
                  rb.angular_velocity = v3_add(rb.angular_velocity, mat3_transform(world_inv_inertia(rb), t));
                  // Post damping: vel *= (1 - 0.001)
-@@ -1340,9 +1342,10 @@
+@@ -1340,9 +1386,10 @@
          if let Some(ib) = idx_b {
              let rb = &mut state.rigid_bodies[ib];
              if !rb.pinned && rb.inverse_mass > 0.0 {
@@ -47,14 +223,52 @@
                  let t = v3_cross(r, impulse);
                  rb.angular_velocity = v3_add(rb.angular_velocity, mat3_transform(world_inv_inertia(rb), t));
                  let factor = 1.0 - post_damping;
-@@ -1496,6 +1499,21 @@
-     state.rigid_bodies.iter().position(|rb| rb.name == name)
- }
+@@ -1356,7 +1403,12 @@
+ /// Apply angular dashpot torques.
+ /// From x86: sub_1001D2D0 — timeScale = dt * 200.0
+ fn apply_angular_dashpots(state: &mut HavokPhysicsState, dt: f64) {
+-    let time_scale = dt * 200.0;
++    // Angular constraint impulses are in physical (metre) inertia units;
++    // the mesh inertia below is kept in display-coordinate units.
++    let units = if is_moonbase_vehicle_scene(state) && state.scale.abs() > 1e-10 {
++        1.0 / (state.scale * state.scale)
++    } else { 1.0 };
++    let time_scale = dt * 200.0 * units;
+     for di in 0..state.angular_dashpots.len() {
+         let dashpot = &state.angular_dashpots[di];
+         if dashpot.strength == 0.0 { continue; }
+@@ -1419,7 +1471,8 @@
+ ///   q_new = q + 0.5 * [0, omega] * q * dt  (normalized)
+ ///   lin_vel += force * invMass * dt
+ ///   omega += I_inv * torque * dt
+-fn integrate_body(rb: &mut crate::player::cast_member::HavokRigidBody, dt: f64) {
++fn integrate_body(rb: &mut crate::player::cast_member::HavokRigidBody, dt: f64, preserve_com: bool) {
++    let old_com_offset = quat_rotate_v(rb.orientation, rb.center_of_mass);
+     if rb.pinned || !rb.active || rb.inverse_mass <= 0.0 { return; }
  
+     // Phase 1: Position: pos += vel * dt
+@@ -1455,6 +1508,11 @@
+         q[3] + (qdot[3] * 0.5 + drift * q[3]) * dt,
+     ]);
+ 
++    if preserve_com {
++        let new_com_offset = quat_rotate_v(rb.orientation, rb.center_of_mass);
++        rb.position = v3_add(rb.position, v3_sub(old_com_offset, new_com_offset));
++    }
++
+     // NB the integrator rotates about `rb.position` (the visual-origin reference),
+     // NOT about the centre of mass, while `build_sync_transform` rotates about the
+     // COM for rendering. Making the integrator COM-preserving was TRIED for Age of
+@@ -1494,6 +1552,21 @@
+ 
+ fn find_body_idx(state: &HavokPhysicsState, name: Symbol) -> Option<usize> {
+     state.rigid_bodies.iter().position(|rb| rb.name == name)
++}
++
 +// Restricted to Moonbase's authored Y-up rigid-body vehicle; other movies
 +// retain their existing emulator path while the native comparisons run.
 +fn is_moonbase_vehicle_scene(state: &HavokPhysicsState) -> bool {
-+    state.gravity[1].abs() > state.gravity[2].abs()
++    state.gravity[0] == 0.0 && state.gravity[2] == 0.0
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"))
 +}
@@ -64,18 +278,16 @@
 +fn dashpot_anchor(rb: &crate::player::cast_member::HavokRigidBody, point: V3, native: bool) -> V3 {
 +    let local = if native && point == [0.0; 3] { rb.center_of_mass } else { point };
 +    body_transform_point(rb, local)
-+}
-+
+ }
+ 
  /// Transform a body-local point to world space.
- fn body_transform_point(rb: &crate::player::cast_member::HavokRigidBody, local_point: V3) -> V3 {
-     v3_add(quat_rotate_v(rb.orientation, local_point), rb.position)
-@@ -1525,6 +1543,23 @@
+@@ -1525,6 +1598,23 @@
  const MAX_BISECTION_RETRIES: usize = 30;
  
  pub fn step_native(state: &mut HavokPhysicsState, time_increment: f64, num_sub_steps: i32) {
 +    // Experimental Moonbase path: the world is Y-up. The generic Z-up
 +    // safety floor and rolling-ball constraint must not reposition the cart.
-+    let moonbase = state.gravity[1].abs() > state.gravity[2].abs()
++    let moonbase = state.gravity[0] == 0.0 && state.gravity[2] == 0.0
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"));
 +    if moonbase {
@@ -93,7 +305,7 @@
      let n_subs = num_sub_steps.max(1) as usize;
      let sub_dt = time_increment / n_subs as f64;
  
-@@ -1669,7 +1704,7 @@
+@@ -1669,7 +1759,7 @@
      // resting contacts, deactivator) so the crutch can go entirely; see the abandoned
      // faithful solver in Desktop\havok\"havok_physics copy.rs".
      const ANGULAR_DRIFT_DAMP: f64 = 0.1; //0.05;
@@ -102,12 +314,12 @@
      for rb in &mut state.rigid_bodies {
          if rb.pinned || !rb.active { continue; }
          rb.angular_velocity[0] *= ang_factor;
-@@ -1734,10 +1769,13 @@
+@@ -1734,10 +1824,13 @@
      // bodies on ANY collision, which for a pile of resting bodies starves the
      // simulation of time and freezes it. Bisection stays on for driven scenes
      // (the SuperSonic car was tuned against it).
 -    let passive = state.springs.is_empty()
-+    let moonbase = state.gravity[1].abs() > state.gravity[2].abs()
++    let moonbase = state.gravity[0] == 0.0 && state.gravity[2] == 0.0
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"));
 +    let passive = moonbase || (state.springs.is_empty()
@@ -118,7 +330,7 @@
  
      while remaining > MIN_BISECTION_DT * 0.1 {
          // Phase 1: Save state for rollback
-@@ -1747,18 +1785,20 @@
+@@ -1747,18 +1840,20 @@
              }
          }
  
@@ -142,19 +354,36 @@
 +            apply_linear_dashpots(state, remaining);
 +            apply_angular_dashpots(state, remaining);
 +        }
-+        for rb in &mut state.rigid_bodies { integrate_body(rb, remaining); }
++        for rb in &mut state.rigid_bodies { integrate_body(rb, remaining, moonbase); }
 +        if moonbase {
 +            apply_linear_dashpots(state, remaining);
 +            apply_angular_dashpots(state, remaining);
          }
  
          // Phase 4a: Cable / point-to-point constraints (pendulum hang+swing).
-@@ -2188,9 +2228,12 @@
+@@ -1863,14 +1958,14 @@
+                         //
+                         // Only INWARD motion (vn < 0) is removed; a separating
+                         // contact is left alone so bodies can still leave a surface.
+-                        if vn < 0.0 {
++                        if vn < 0.0 && !moonbase {
+                             rb.linear_velocity[0] -= vn * c.normal[0];
+                             rb.linear_velocity[1] -= vn * c.normal[1];
+                             rb.linear_velocity[2] -= vn * c.normal[2];
+                         }
+                         // Resting contact only for a body resting on another
+                         // body's OWNED static mesh (SuperSonic car on terrain).
+-                        if c.body_b.is_some() && vn.abs() < 10.0 {
++                        if !moonbase && c.body_b.is_some() && vn.abs() < 10.0 {
+                             if let Some(m) = state.collision_meshes.iter().find(|m| m.body_index == c.body_b) {
+                                 rb.resting_normal = Some(crate::player::cast_member::RestingContact {
+                                     normal: c.normal,
+@@ -2188,9 +2283,12 @@
      // SuperSonic-style scenes register dashpots/springs and instead drive
      // ground contact from Lingo hover forces, so for those we keep skipping the
      // upward-facing static-ground contacts (handled by the ground constraint).
 -    let passive_scene = state.springs.is_empty()
-+    let moonbase = state.gravity[1].abs() > state.gravity[2].abs()
++    let moonbase = state.gravity[0] == 0.0 && state.gravity[2] == 0.0
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Car"))
 +        && state.rigid_bodies.iter().any(|b| b.name.as_str().eq_ignore_ascii_case("Spring"));
 +    let passive_scene = moonbase || (state.springs.is_empty()
@@ -164,7 +393,7 @@
  
      for bi in 0..state.rigid_bodies.len() {
          let rb = &state.rigid_bodies[bi];
-@@ -2209,7 +2252,7 @@
+@@ -2209,11 +2307,11 @@
          // box — a car chassis is far thinner than its box, whose corners otherwise
          // ram a rising loop wall the real hull clears. Everything else keeps the
          // box-support narrow phase it was tuned against.
@@ -173,7 +402,12 @@
              let hull_world: Vec<V3> = rb.collision_hull_local.iter()
                  .map(|l| v3_add(rb.position, quat_rotate_v(rb.orientation, *l)))
                  .collect();
-@@ -2263,7 +2306,7 @@
+-            detect_hull_contacts(&state.collision_meshes, &hull_world, bi, state.tolerance, &state.rigid_bodies)
++            detect_hull_contacts(&state.collision_meshes, &hull_world, bi, state.tolerance, moonbase, &state.rigid_bodies)
+         } else {
+             // Use the body's actual half-extents (box support) for collision.
+             let he = rb.inertia_half_extents;
+@@ -2263,7 +2361,7 @@
      // Dynamic body vs dynamic body (axis-aligned box approximation) — passive
      // scenes only. This is what keeps a stack of crates standing. SuperSonic-
      // style scenes have no dynamic-vs-dynamic stacks and were tuned without it.

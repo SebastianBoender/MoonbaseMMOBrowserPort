@@ -5,9 +5,9 @@ Trace world startup, click Play, then read RoomNumber and rigid body properties
 in the Lingo console. The fixture stops after 90 physics steps. --native uses
 original vehicle handlers to expose emulator errors instead of the fallback.
 """
-import argparse,sys,struct,shutil
+import argparse,sys,struct,shutil,json,hashlib
 from pathlib import Path
-parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--native',action='store_true');parser.add_argument('--frames',type=int,default=90);parser.add_argument('--input',choices=['idle','forward','reverse','forward-left','forward-right','forward-brake'],default='forward');args=parser.parse_args()
+parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--native',action='store_true');parser.add_argument('--runtime-bundle',type=Path,help='Optional experimental bundle, copied only into this fixture');parser.add_argument('--frames',type=int,default=90);parser.add_argument('--input',choices=['idle','forward','reverse','forward-left','forward-right','forward-brake'],default='forward');args=parser.parse_args()
 if not 1 <= args.frames <= 10000:parser.error('frames must be between 1 and 10000')
 root=Path(__file__).resolve().parents[2];sys.path.insert(0,str(root/'browser-test'))
 if args.output.resolve()==root or root in args.output.resolve().parents:raise SystemExit('Use a disposable directory outside the repository')
@@ -55,7 +55,12 @@ for rid in [1077,1078]:
    # retain their original SetupPhysics spawn state.
    old=bytes.fromhex('41034201560c');assert old in code
    code=code.replace(old,bytes.fromhex('41014201560c'))
-   new=insert_bytecode(code,{0:b'\x03'+named(0x4f,'RoomNumber')})
+   prefix=b'\x03'+named(0x4f,'RoomNumber')
+   inserts={0:prefix}
+   if args.native:
+    assert code[-1:]==b'\x01'
+    inserts[len(code)-1]=op(0x43,0)+b'\x1e'+named(0x4f,'browserCartYaw')
+   new=insert_bytecode(code,inserts)
   elif rid==1077 and name=='DrivePlayer':
    new=bytearray(code);ops=decode(code)
    for j,o in enumerate(ops):
@@ -68,7 +73,15 @@ for rid in [1077,1078]:
    if args.native:
     # Match the projector fixture exactly: original DrivePlayer then Havok
     # step, with no recovery/camera/network handlers between measured steps.
-    code=op(0x41,1)+named(0x50,'FrameMod')+op(0x42,0)+op(0x56,original_ids['DrivePlayer'])+original[name][220:237]+b'\x01'
+    code=op(0x41,1)+named(0x50,'FrameMod')+op(0x42,0)+op(0x56,original_ids['DrivePlayer'])+original[name][220:237]
+    # Reuse the fallback-only accumulator in this native-handler test as a
+    # private trace list. No production controller or network handler reads it.
+    fields=[named(0x49,'RoomNumber')]
+    for body_literal in [28,32]:  # original gameplay literals: car, Spring
+     for prop in ['position','linearVelocity','angularVelocity','rotation']:
+      fields.append(named(0x49,'havok')+op(0x44,body_literal)+op(0x43,2)+named(0x67,'rigidBody')+named(0x61,prop)+op(0x43,1)+named(0x57,'string'))
+    row=b''.join(fields)+op(0x43,len(fields))+b'\x1e'
+    code+=named(0x49,'browserCartYaw')+row+op(0x42,2)+named(0x57,'add')+b'\x01'
    # if count < 90 jump over return, otherwise return
    gate=named(0x49,'RoomNumber')+op(0x41,args.frames)+b'\x11'+op(0x55,3)+b'\x01'
    increment=named(0x49,'RoomNumber')+op(0x41,1)+b'\x05'+named(0x4f,'RoomNumber')
@@ -82,3 +95,36 @@ struct.pack_into('<I',m,4,len(m)-8)
 (pub/'game/moonbase-browser.dir').write_bytes(m)
 shutil.copy2(root/'browser-test/public/game/moonbase.dir',pub/'game/moonbase.dir')
 print(out)
+
+(out/'driving-fixture.json').write_text(json.dumps({'input':args.input,'frames':args.frames,'dt':0.022,'native_handlers':args.native},indent=2)+'\n')
+# Add an export action only to this private diagnostics UI. Every sample is
+# recorded by the movie immediately after Havok.step; polling cannot skip ticks.
+player=pub/'player.js';js=player.read_text()
+if args.native:
+ marker="    if (event.data.type === 'moonbase-lingo') {"
+ js=js.replace(marker,marker+"""
+      if (String(event.data.source).trim() === '@export-driving') {
+        const size = JSON.parse(await vm.mcp_eval_lingo('browserCartYaw.count')).result_value;
+        for (let i=1; i<=Number(size); i++) {
+          const row = [i];
+          for (let k=2; k<=9; k++) {
+            const result = JSON.parse(await vm.mcp_eval_lingo(`getAt(getAt(browserCartYaw, ${i}), ${k})`));
+            row.push(JSON.parse(result.result_value));
+          }
+          report('info', `Driving row: ${JSON.stringify(row)}`);
+        }
+        return;
+      }
+ """)
+if args.runtime_bundle:
+ bundle=args.runtime_bundle.resolve();official=vendor.resolve();vendor.unlink();vendor.mkdir()
+ dest=vendor/'dirplayer-0.8.1';dest.mkdir()
+ for asset in (official/'dirplayer-0.8.1').iterdir():
+  if asset.name!='dirplayer-modern.js':(dest/asset.name).symlink_to(asset,target_is_directory=asset.is_dir())
+ shutil.copy2(bundle,dest/'dirplayer-modern.js')
+ # Load the supplied bundle for the Original renderer too, keeping its render
+ # options original while testing exactly the same experimental physics code.
+ js=js.replace('if (modern)', 'if (true)',1)
+ manifest=pub/'game/modern-runtime.json';data=json.loads(manifest.read_text())
+ data['bundle_sha256']=hashlib.sha256(bundle.read_bytes()).hexdigest();manifest.write_text(json.dumps(data))
+player.write_text(js)
