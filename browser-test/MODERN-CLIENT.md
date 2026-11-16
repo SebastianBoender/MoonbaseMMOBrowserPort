@@ -48,3 +48,16 @@ Browser verification records actual offscreen 3D viewports for all presets, nati
 Normal `setup.py` / `deploy.sh --package-only` verifies and decompresses the included Modern runtime; the Ubuntu VPS does not need Rust, Node or npm. Packaged HTML references content-versioned JS/CSS; the derived runtime URL includes its bundle hash. The installer checks that both runtimes and the Modern manifest are present. Existing atomic-release deployment/rollback remains in use.
 
 For a developer rebuild, see `runtime-modern/README.md`. The complete corresponding source and build recipe are also shipped beneath `/vendor/dirplayer-0.8.1/modern-source/` using direct filenames. To disable Modern, users can return to Original without changing their server or account.
+
+
+### Recorded acceptance run
+
+Validated the clean code snapshot `be121e1` separately from concurrent chat-protocol edits in the working tree. All 12 Python tests and 29 JavaScript tests passed, and `deploy.sh --package-only` completed. Package inspection verified both runtimes, corresponding source and content-versioned HTML assets.
+
+The browser reported these actual full-world offscreen targets in one unchanged game session: 1047×720, 1571×1080, 2095×1440, 3142×2160 and 800×550. Repeated switches, including a second 4K switch, retained one tracked stage framebuffer, one depth renderbuffer and 14 stage textures after warm-up/recovery. A forced `WEBGL_lose_context` test recovered to 800×550 with the same movie session and resumed 3D rendering. Limits and failed allocation paths also have automated coverage.
+
+Native name typing was visibly verified at 4K quality after fixing legacy text clipping. Original was separately checked to load the official diagnostic bundle and hide Modern settings. Mobile landscape fullscreen retained quality selection and touch controls; a held forward input moved the avatar after changing quality. The external `/fps` command reached the original local handler and appeared in the transparent chat. At a 320px viewport, document width equalled available width (305 CSS pixels with the scrollbar). No terms agreement was accepted during testing; world checks used the existing diagnostic entry and ordinary chat transmission was not tested in that declined-terms session.
+
+Representative local draw-cadence samples were about 50 fps at Original and 4K, with p95 around 27–28 ms and no >50 ms intervals in those 240-sample windows. These are observations on one machine, not a cross-device performance guarantee. Physical mobile keyboards/touch, other browser engines, low-memory GPU behavior, and full multiplayer/vehicle regression sessions remain manual validation limits. Gravity pointer conversion is covered by geometry tests; a physical slider drag should be included in device testing.
+
+Screenshots and detailed session samples are local ignored verification artifacts: `verification/modern-client-4k.png`, `verification/modern-4k-name-entry.png`, and `verification/modern-final-checks.json`.
