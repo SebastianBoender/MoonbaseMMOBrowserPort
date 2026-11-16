@@ -175,3 +175,5 @@ See [deploy/README.md](deploy/README.md) and run `./browser-test/deploy/deploy.s
 
 
 Mobile input verification: the 390px browser viewport exercised native name entry, a scaled Login tap, Enter Base, held movement, jetpack lift and a local `/fps` chat command. The 320px layout had no horizontal overflow; landscape fullscreen kept the pad beside the stage. Automated tests cover independent/same-key fingers, cancel/lost capture, mode restrictions, origin checks, focus/visibility cleanup and the input heartbeat timeout. Physical Android/iOS touch and software keyboards still need device testing. Run `node --test browser-test/tests/*.cjs` for input regressions.
+
+Deployment packages stamp local script and stylesheet URLs in both HTML documents with each asset's SHA-256 prefix. This forces browsers with cached assets from older releases to fetch the matching chat/UI files even if the older response allowed caching. After the first upgrade to this packaging change, open the site with a fresh query string (for example `/?update=asset-versions`) or hard-refresh the page.

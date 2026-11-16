@@ -23,6 +23,7 @@ mkdir -p "$ROOT/deploy/dist"
 STAGING=$(mktemp -d)
 trap 'rm -rf -- "$STAGING"' EXIT
 cp -a "$ROOT/public" "$STAGING/public"
+python3 "$ROOT/deploy/version_assets.py" "$STAGING/public"
 cp "$ROOT/serve.py" "$ROOT/mus_bridge.py" "$ROOT/deploy/install.sh" "$STAGING/"
 printf '%s\n' "$DOMAIN" > "$STAGING/domain.txt"
 # No original EXE, source scripts, local logs, caches or credentials in the package.
