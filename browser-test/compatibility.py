@@ -144,6 +144,24 @@ def adapt_gameplay(script, names):
     assert script[literal_data + literal_offset + 4:literal_data + literal_offset + 3 + literal_size] == b'CharacterSetup'
     count, table = struct.unpack_from('>HI', script, 72)
     changes = []
+    def named(opcode, name):
+        return encode(opcode, 2, names.index(name))
+    def scene_ref(kind, literal):
+        return named(0x49, 'sp') + encode(0x44, 1, literal) + bytes.fromhex('4302') + named(0x67, kind)
+    def literal_for(text):
+        for literal_index in range(literal_count):
+            kind, relative = struct.unpack_from('>II', script, literal_table + literal_index * 8)
+            if kind != 1:
+                continue
+            length = struct.unpack_from('>I', script, literal_data + relative)[0]
+            if script[literal_data + relative + 4:literal_data + relative + 3 + length] == text.encode('mac_roman'):
+                return encode(0x44, 1 if literal_index < 256 else 2, literal_index)
+        raise ValueError(f'Missing game literal: {text}')
+    walk_body = named(0x49, 'havok') + literal_for('Walk') + bytes.fromhex('4302') + named(0x67, 'rigidBody')
+    rocket = scene_ref('modelResource', 196) + named(0x61, 'emitter')
+    # The existing "Particle" texture name also names the independent second
+    # particle resource; textures and model resources have separate namespaces.
+    rocket_right = scene_ref('modelResource', 211) + named(0x61, 'emitter')
     for index in range(count):
         record = table + index * 46
         name_id = struct.unpack_from('>H', script, record)[0]
@@ -159,8 +177,6 @@ def adapt_gameplay(script, names):
         elif name_id == names.index('prepareFrame'):
             # Snapshot existing players and their head anchors. Reading
             # globals avoids executing debug expressions on every UI poll.
-            def named(opcode, name):
-                return encode(opcode, 2, names.index(name))
             head = bytes.fromhex('41008100cd41004303') + named(0x57, 'vector')
             buffer = named(0x49, 'browserLabels')
             snapshot = bytearray(bytes.fromhex('43001e') + named(0x4f, 'browserLabels'))
@@ -175,9 +191,57 @@ def adapt_gameplay(script, names):
                 append = append_label(item('userpname'), position)
                 snapshot.extend(named(0x49, 'usercode') + named(0x61, 'count') + encode(0x41, 1, player_index) + b'\x11' +
                                 encode(0x55, 2, len(append) + 3) + append)
+            # The runtime uses a model's local transform as an emitter origin
+            # and keeps one particle system per resource. Supply world regions
+            # for both nozzles and mirror the original thrust switch.
+            for emitter, nozzle in [(rocket, 213), (rocket_right, 214)]:
+                snapshot.extend(emitter + scene_ref('model', nozzle) + named(0x61, 'worldPosition') + named(0x62, 'region'))
+            snapshot.extend(rocket_right + rocket + named(0x61, 'loop') + named(0x62, 'loop'))
+            start_particles = b''.join(emitter + bytes.fromhex('4114') + named(0x62, 'numParticles') for emitter in (rocket, rocket_right))
+            snapshot.extend(rocket + named(0x61, 'loop') + encode(0x55, 2, len(start_particles) + 3) + start_particles)
             assert code[-1:] == b'\x01'
             adapted = insert_bytecode(code, {len(code) - 1: bytes(snapshot)})
-            label = 'prepareFrame: snapshot player names and world-space head anchors for browser text'
+            label = 'prepareFrame: snapshot nameplates and synchronize both jetpack emitter world positions and thrust state'
+        elif name_id == names.index('MakeRocketPack'):
+            assert size == 359 and code[44:48] == bytes.fromhex('492244c4')
+            assert code[287:291] == bytes.fromhex('492244d5')
+            # Duplicate the original resource setup verbatim, changing only its
+            # resource-name literal. Preserve the original particle texture,
+            # colors, speeds, size, opacity, lifetime and nozzle transforms.
+            second = b''.join(encode(0x44, op['width'], 211) if op['op'] == 0x44 and op['value'] == 196 else op['raw']
+                              for op in decode(code[44:287]))
+            assign_right = scene_ref('model', 214) + scene_ref('modelResource', 211) + named(0x62, 'resource')
+            quiet_start = b''.join(emitter + b'\x03' + named(0x62, 'numParticles') for emitter in (rocket, rocket_right))
+            adapted = insert_bytecode(code, {44: second, 358: assign_right + quiet_start})
+            label = 'MakeRocketPack: use independent original particle resources for left and right nozzles'
+        elif name_id == names.index('SetupPhysics'):
+            # Native mesh resting contacts are Z-up; Moonbase's terrain and
+            # gravity are Y-up. WalkPlayer supplies the original heightfield
+            # floor instead of letting this mismatched contact slide the body.
+            disable = named(0x49, 'havok') + literal_for('Walk') + literal_for('GroundShape') + bytes.fromhex('4203') + named(0x67, 'disableCollision')
+            assert code[-1:] == b'\x01'
+            adapted = insert_bytecode(code, {len(code) - 1: disable})
+            label = 'SetupPhysics: use the original Y-up heightfield for walking terrain contact'
+        elif name_id == names.index('WalkPlayer'):
+            height = named(0x49, 'browserGroundHeight')
+            position = walk_body + named(0x61, 'position')
+            velocity = walk_body + named(0x61, 'linearVelocity')
+            sample = position + b'\x03' + bytes.fromhex('4302') + named(0x57, 'checkheight') + bytes.fromhex('413205') + named(0x4f, 'browserGroundHeight')
+            def vector_at_y(source, y):
+                return source + named(0x61, 'x') + y + source + named(0x61, 'z') + bytes.fromhex('4303') + named(0x57, 'vector')
+            floor = (walk_body + vector_at_y(position, height) + named(0x62, 'position') +
+                     walk_body + vector_at_y(velocity, b'\x03') + named(0x62, 'linearVelocity') +
+                     bytes.fromhex('4101') + named(0x50, 'ongroundwalk'))
+            grounded = position + named(0x61, 'y') + height + b'\x0d' + velocity + named(0x61, 'y') + b'\x03\x0d\x12'
+            adapted = insert_bytecode(code, {0: sample + grounded + encode(0x55, 2, len(floor) + 3) + floor})
+            label = 'WalkPlayer: restore Y-up ground contact and original idle braking; preserve airborne momentum'
+        elif name_id == names.index('FramerateTest'):
+            # Avoid a background-tab stall producing a multi-second Havok step
+            # and one enormous steering/rocket impulse on return.
+            limits = [op for op in decode(code) if op['op'] == 0x41 and op['value'] == 99]
+            assert len(limits) == 2
+            adapted = b''.join(encode(op['op'], op['width'], 9) if op in limits else op['raw'] for op in decode(code))
+            label = 'FramerateTest: cap frame-resume simulation increments to 60ms instead of 660ms'
         elif code[292:296] == bytes.fromhex('67bd520c') and size == 641:
             # Reassigning the moved body's position invokes the runtime's W3D
             # synchronization path, which attemptMoveTo currently omits.
@@ -213,7 +277,7 @@ def adapt_gameplay(script, names):
         changes.append({'name_id': name_id, 'change': label,
                         'original_sha256': hashlib.sha256(code).hexdigest(),
                         'adapted_sha256': hashlib.sha256(adapted).hexdigest()})
-    assert len(changes) == 5
+    assert len(changes) == 9
     for position in (8, 12):
         struct.pack_into('>I', script, position, len(script))
     return changes
@@ -338,8 +402,8 @@ def prepare(root):
         cursor += 1 + length
     names.append('getNetMessage')
     names.append('puppet')
-    names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay'])
-    for name in ['getAt']:
+    names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay', 'browserGroundHeight'])
+    for name in ['getAt', 'region']:
         if name not in names:
             names.append(name)
     names[names.index('RigidBody')] = 'rigidBody'

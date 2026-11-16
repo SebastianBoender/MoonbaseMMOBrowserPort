@@ -76,7 +76,7 @@
         report('info', `Gameplay ${script.name}.${handler}: ${vm.mcp_decompile_handler(script.cast_lib,script.cast_member,handler)}`);
       }
     }
-    for (const handler of ['beginSprite','mouseUp','keyDown','prepareFrame','SwitchAvatarMode','MoveCamera','CheckWindowRescale']) {
+    for (const handler of ['beginSprite','mouseUp','keyDown','prepareFrame','SwitchAvatarMode','MoveCamera','CheckWindowRescale','WalkPlayer','FramerateTest','SetupPhysics','collisioncallbackwalk','MakeRocketPack']) {
       report('info', `Gameplay SpriteBehavior.${handler}: ${vm.mcp_decompile_handler(1,5,handler)}`);
     }
     for (const handler of ['makeTerrain','createrocks']) report('info', `World MakeTheTerrain.${handler}: ${vm.mcp_decompile_handler(1,8,handler)}`);

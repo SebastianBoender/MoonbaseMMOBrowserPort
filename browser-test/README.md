@@ -127,6 +127,20 @@ The same unsupported text-to-texture path hides `PlayerLabel`. `labels.js` rende
 
 A local `BrowserTest` nameplate was visually checked above the avatar, together with working local chat commands. Remote labels use the current room's `usercode`/`userpname` and model positions; a two-client visual check remains necessary. This does not repair missing remote-avatar meshes or add terrain occlusion to labels.
 
+### Walking drift and keyboard focus
+
+`input-compatibility.js` releases game keys when chat takes focus, the frame loses focus, the document becomes hidden, or pointer lock exits. It captures key releases before chat stops propagation and also tracks DirPlayer's hidden input. A native browser reproduction previously left `keyPressed(126)` at 1 after releasing Up over chat; the same sequence now reads 0.
+
+The runtime's resting mesh contact path assumes Z-up, while Moonbase's terrain and gravity use Y-up. For the walking body only, the adapter disables its native GroundShape collision and supplies floor contact from the game's original `checkheight` query and authored 50-unit center offset. It updates the behavior's actual `ongroundwalk` property so original walking acceleration and idle braking run. Gravity, airborne momentum, rocket impulses and other collision pairs remain active. This is a walking terrain compatibility fallback, not a general replacement Havok implementation.
+
+FrameMod is capped at 9 (60ms of elapsed frame time), rather than the original 99, to avoid a large steering/physics impulse after a background-tab stall. A simulated 100-second clock gap returned 9 in the VM. Browser checks covered 20-second stationary position stability, walking and stopping, jetpack ascent and landing, and unchanged horizontal position after landing. Lifecycle regression checks run with `node --test browser-test/tests/test_input_compatibility.cjs`.
+
+### Jetpack boosters
+
+The runtime uses a nozzle model's local position as its particle origin and shares one particle system per resource. Moonbase parents two nozzle models to the astronaut and shares a resource between them, leaving the effect at the wrong location and combining the two streams.
+
+The adapter gives the right nozzle an independent resource (named `Particle`, in the separate model-resource namespace), copying the original setup bytecode with only the resource name changed. Both streams retain the original particle texture, yellow-to-red colors, opacity, speeds, sizes, lifetime and nozzle transforms. Each frame supplies both nozzles' world positions as emitter regions and mirrors the original resource's thrust switch to the second stream. Particle counts start at zero to avoid the runtime's initial one-shot burst, then become the original 20 per nozzle on first thrust. The original control logic still controls timing; neither stream loops after Ctrl release. Both native particle streams were visually checked during actual Ctrl thrust.
+
 ## Ubuntu deployment
 
 See [deploy/README.md](deploy/README.md) and run `./browser-test/deploy/deploy.sh root@YOUR_VPS_IP` from the project directory. The default domain is moonbasemmo.com. The installer replaces the authorized HMC frontend, configures automatic HTTPS through Caddy, and manages a loopback-only game/SMUS bridge through systemd. Production mode supports the HTTPS origin and disables shared browser logs; it does not install a replacement multiplayer backend.
