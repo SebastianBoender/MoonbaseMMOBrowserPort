@@ -18,11 +18,11 @@ install -d -m 0755 /opt/moonbase/releases /etc/caddy/moonbase.d
 RELEASE="/opt/moonbase/releases/$(date -u +%Y%m%dT%H%M%SZ)-$$"
 install -d -m 0755 "$RELEASE"
 cp -a "$SOURCE/public" "$RELEASE/public"
-install -m 0644 "$SOURCE/serve.py" "$SOURCE/mus_bridge.py" "$RELEASE/"
+install -m 0644 "$SOURCE/serve.py" "$SOURCE/mus_bridge.py" "$SOURCE/chat_protocol.py" "$RELEASE/"
 chown -R root:root "$RELEASE"
 find "$RELEASE" -type d -exec chmod 0755 {} +
 find "$RELEASE" -type f -exec chmod 0644 {} +
-python3 -m py_compile "$RELEASE/serve.py" "$RELEASE/mus_bridge.py"
+python3 -m py_compile "$RELEASE/serve.py" "$RELEASE/mus_bridge.py" "$RELEASE/chat_protocol.py"
 # A symlink switch preserves the previous release for a simple rollback.
 PREVIOUS=$(readlink -f /opt/moonbase/current || true)
 ln -s "$RELEASE" /opt/moonbase/current.next

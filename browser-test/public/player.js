@@ -65,6 +65,17 @@
       return;
     }
     if (event.data.type === 'moonbase-lingo') {
+      if (String(event.data.source).trim() === '@chat-protocol') {
+        // Read-only protocol inspection, including the end of long handlers
+        // that the ordinary diagnostic message limit would truncate.
+        for (const [member, handler] of [[49,'EncryptString'], [49,'DecryptString'], [49,'chatMessageHandler'], [49,'CharPositionMessageHandler'], [5,'keyDown'], [5,'UpdateServer']]) {
+          const source = vm.mcp_decompile_handler(1, member, handler);
+          for (let offset = 0; offset < source.length; offset += 4000) {
+            report('info', `Chat protocol ${member}.${handler} part ${offset / 4000 + 1}: ${source.slice(offset, offset + 4000)}`);
+          }
+        }
+        return;
+      }
       if (String(event.data.source).trim() === '@physics') {
         for (const handler of ['DrivePlayer', 'CheckCarFlipped', 'prepareFrame']) report('info', `Physics handler ${handler}: ${vm.mcp_decompile_handler(1,5,handler)}`);
         // Observe live input and bodies while native keys remain on the game.
@@ -89,7 +100,7 @@
     }
     for (const [count, uniforms] of Object.entries(window.moonbaseGPU?.draws || {})) report('info', `GPU draw ${count}: ${JSON.stringify(uniforms)}`);
 
-    for (const [lib, member, handlers] of [[1,23,['beginSprite','mouseUp']],[1,37,['beginSprite','mouseDown']],[1,49,['PrintToConsole','chatMessageHandler']]]) {
+    for (const [lib, member, handlers] of [[1,23,['beginSprite','mouseUp']],[1,37,['beginSprite','mouseDown']],[1,49,['PrintToConsole','chatMessageHandler','EncryptString','DecryptString']]]) {
       for (const handler of handlers) report('info', `Chat handler ${lib}:${member}.${handler}: ${vm.mcp_decompile_handler(lib,member,handler)}`);
     }
     const scripts = JSON.parse(vm.mcp_list_scripts(-1, 100, 0)).scripts;

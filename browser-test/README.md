@@ -46,7 +46,7 @@ Upstream reports many original Xtra filenames as "missing" from the optional ext
 
 Normal gameplay connects through same-origin `/mus`, a WebSocket-to-TCP bridge fixed to **pigyak.com:1626**, the destination embedded in this game. This was enabled at the user's request for original-server testing. The address resolved and accepted a TCP connection during setup; a real room join has since been verified with the callback adaptations below.
 
-The bridge forwards the runtime's binary MUS protocol unchanged. Player names, game messages and any chat entered are sent to that remote service. The legacy TCP leg is unencrypted. No account passwords are required by this launcher. The local HTTP host remains bound to 127.0.0.1; the bridge checks the browser Origin, only accepts masked binary messages, and does not accept a destination from the client. Browser CSP still restricts connections to the local host.
+The bridge preserves the MUS protocol, with one compatibility translation: the encrypted `MC.content[2]` chat string is converted between the browser's byte-valued representation and the supplied Director 12 projector's UTF-8 wire representation. Player names, game messages and any chat entered are sent to that remote service. The legacy TCP leg is unencrypted. No account passwords are required by this launcher. The local HTTP host remains bound to 127.0.0.1; the bridge checks the browser Origin, only accepts masked binary messages, and does not accept a destination from the client. Browser CSP still restricts connections to the local host.
 
 `mus_bridge.py` implements this transport using Python's standard library. Run `python3 browser-test/tests/test_mus_bridge.py` to verify the WebSocket transport against a local echo server (no remote game login). A failed upstream connection returns HTTP 502 and logs the cause in `logs/server.log`. The bridge is not a replacement game backend and does not simulate successful login. **Test 3D startup** remains an offline inspection path that pauses before the connection call.
 
@@ -110,6 +110,18 @@ A **Lingo compatibility console** inside diagnostics can run one Lingo expressio
 Verification of the terrain/menu adaptation: a fresh ordinary player session loaded the original surface detail, joined room 1 and entered Walking mode through the original Enter Base control. Setup channels disappear while the 3D viewport expands to 800 pixels; calling the original setup transition restores their visibility on the next frame. See `verification/terrain-menu-fixed.png` and `verification/terrain-menu-diagnostics.txt`. Three bytecode branch-relocation checks, setup regeneration/hash validation, Python compilation and JavaScript syntax checks passed.
 
 ## Browser chat
+
+### Downloadable-client interoperability
+
+The supplied Director 12 desktop runtime writes the encrypted chat string as UTF-8, while DirPlayer writes its characters as individual bytes. Even an ASCII message produces high-byte cipher characters. Without conversion, both runtimes decrypt the other one's messages into garbage, which the game's list parser then rejects silently. Browser-to-browser chat alone cannot detect this problem.
+
+`chat_protocol.py` converts only that encrypted field, adjusts string padding and packet lengths, and reassembles split/coalesced MUS frames. All other fields and the original game encryption, terms checks, room routing, ignore list and timestamp validation are retained. Incoming older byte-based cipher strings remain supported. The browser send path remains the original game handler; the bridge never generates a chat message or logs plaintext.
+
+The bug and correction were reproduced against the actual bundled projector in Wine using a patched **disposable copy**, a loopback MUS fixture and an isolated network namespace with the personal home directory hidden. The original package was untouched. The old browser bytes decoded incorrectly in the native runtime; translated bytes decoded to the exact expected text. The native packet was also checked through the browser VM's actual `EncryptString`/`DecryptString` functions. See [protocol evidence](../port-analysis/CHAT-COMPATIBILITY.md). A live mixed-client session on the deployed website remains a separate final check.
+
+Run `python3 browser-test/tests/test_chat_protocol.py` and `python3 browser-test/tests/test_mus_bridge.py` for the captured native packet and bidirectional bridge regressions. `tests/native_chat_probe.py` reproduces the native test and refuses to run with a default IPv4 route; run it only inside a private network namespace. The diagnostics console command `@chat-protocol` reads the relevant game handlers in bounded chunks without sending messages.
+
+This fix is in the Python backend. Deploy the updated backend and reconnect browser players before retesting with desktop users; refreshing static page files alone does not update a running bridge.
 
 The original **Global Chat** control toggles console versus speech-bubble mode; it never opened a separate chat window. DirPlayer 0.8.1 cannot create the text textures used by either view, so messages/input were invisible.
 

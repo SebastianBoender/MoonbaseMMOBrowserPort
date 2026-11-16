@@ -4,6 +4,7 @@ import hashlib
 import select
 import socket
 import struct
+from chat_protocol import ChatStream
 
 REMOTE = ('pigyak.com', 1626)
 MAX_FRAME = 1024 * 1024
@@ -108,6 +109,8 @@ def proxy(handler):
         sent_bytes = received_bytes = 0
         incoming_trace = MusTrace(handler, "server")
         outgoing_trace = MusTrace(handler, "client")
+        incoming_chat = ChatStream('server')
+        outgoing_chat = ChatStream('client')
         trace = not getattr(handler.server, 'production', False)
         try:
             while True:
@@ -125,7 +128,9 @@ def proxy(handler):
                     received_bytes += len(chunk)
                     if trace:
                         handler.log_message('MUS received %d bytes; header=%s', len(chunk), chunk[:6].hex())
-                    send_frame(handler.connection, chunk)
+                    translated = incoming_chat.feed(chunk)
+                    if translated:
+                        send_frame(handler.connection, translated)
                 if handler.connection in ready:
                     final, opcode, data = read_frame(handler.rfile)
                     if opcode == 8:
@@ -137,7 +142,9 @@ def proxy(handler):
                         continue
                     elif opcode == 2 and fragmented is None:
                         if final:
-                            upstream.sendall(data)
+                            data = outgoing_chat.feed(data)
+                            if data:
+                                upstream.sendall(data)
                             if trace:
                                 outgoing_trace.feed(data)
                             sent_bytes += len(data)
@@ -150,10 +157,12 @@ def proxy(handler):
                         if len(fragmented) > MAX_FRAME:
                             raise ValueError('Message too large')
                         if final:
-                            upstream.sendall(fragmented)
+                            data = outgoing_chat.feed(fragmented)
+                            if data:
+                                upstream.sendall(data)
                             if trace:
-                                outgoing_trace.feed(fragmented)
-                            sent_bytes += len(fragmented)
+                                outgoing_trace.feed(data)
+                            sent_bytes += len(data)
                             if trace:
                                 handler.log_message('MUS sent fragmented %d bytes', len(fragmented))
                             fragmented = None

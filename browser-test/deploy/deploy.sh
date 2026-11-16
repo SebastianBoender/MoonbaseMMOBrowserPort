@@ -24,12 +24,12 @@ STAGING=$(mktemp -d)
 trap 'rm -rf -- "$STAGING"' EXIT
 cp -a "$ROOT/public" "$STAGING/public"
 python3 "$ROOT/deploy/version_assets.py" "$STAGING/public"
-cp "$ROOT/serve.py" "$ROOT/mus_bridge.py" "$ROOT/deploy/install.sh" "$STAGING/"
+cp "$ROOT/serve.py" "$ROOT/mus_bridge.py" "$ROOT/chat_protocol.py" "$ROOT/deploy/install.sh" "$STAGING/"
 printf '%s\n' "$DOMAIN" > "$STAGING/domain.txt"
 # No original EXE, source scripts, local logs, caches or credentials in the package.
 find "$STAGING" -type d -name __pycache__ -prune -exec rm -rf -- {} +
 ARCHIVE="$ROOT/deploy/dist/moonbase-deploy.tar.gz"
-tar -C "$STAGING" -czf "$ARCHIVE" public serve.py mus_bridge.py install.sh domain.txt
+tar -C "$STAGING" -czf "$ARCHIVE" public serve.py mus_bridge.py chat_protocol.py install.sh domain.txt
 printf 'Deployment package: %s\n' "$ARCHIVE"
 (( !PACKAGE_ONLY )) || exit 0
 REMOTE_DIR=$(ssh -- "$TARGET" 'mktemp -d /tmp/moonbase-deploy.XXXXXXXX')
