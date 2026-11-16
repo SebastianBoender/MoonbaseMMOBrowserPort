@@ -22,6 +22,10 @@
   // modifier keys remain with the game until the player starts a message.
   addEventListener('keydown', e => {
     if (panel.hidden || panel.contains(e.target) || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+    // The original +/= shortcut leaves the vehicle. Let the game's keyDown
+    // handler receive it rather than turning it into the start of a message.
+    if ((e.key === '+' || e.key === '=') && window.__vm &&
+        window.moonbaseRead.string(window.moonbaseRead.globals().AvatarMode) === 'Driving') return;
     if (e.key === 'Enter' || (e.key.length === 1 && e.key !== ' ')) {
       e.preventDefault(); e.stopPropagation(); openChat();
       if (e.key.length === 1 && input.value.length < input.maxLength) input.value += e.key;

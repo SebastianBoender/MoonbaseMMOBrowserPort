@@ -158,6 +158,20 @@ def adapt_gameplay(script, names):
                 return encode(0x44, 1 if literal_index < 256 else 2, literal_index)
         raise ValueError(f'Missing game literal: {text}')
     walk_body = named(0x49, 'havok') + literal_for('Walk') + bytes.fromhex('4302') + named(0x67, 'rigidBody')
+    def body_ref(name):
+        return named(0x49, 'havok') + literal_for(name) + bytes.fromhex('4302') + named(0x67, 'rigidBody')
+    def vector_at_y(source, y):
+        return source + named(0x61, 'x') + y + source + named(0x61, 'z') + bytes.fromhex('4303') + named(0x57, 'vector')
+    def ground_contact(body, offset, flag):
+        height = named(0x49, 'browserGroundHeight')
+        position = body + named(0x61, 'position')
+        velocity = body + named(0x61, 'linearVelocity')
+        sample = position + b'\x03' + bytes.fromhex('4302') + named(0x57, 'checkheight') + encode(0x41, 1, offset) + b'\x05' + named(0x4f, 'browserGroundHeight')
+        floor = (body + vector_at_y(position, height) + named(0x62, 'position') +
+                 body + vector_at_y(velocity, b'\x03') + named(0x62, 'linearVelocity') +
+                 bytes.fromhex('4101') + named(0x50, flag))
+        grounded = position + named(0x61, 'y') + height + b'\x0d' + velocity + named(0x61, 'y') + b'\x03\x0d\x12'
+        return sample + grounded + encode(0x55, 2, len(floor) + 3) + floor
     rocket = scene_ref('modelResource', 196) + named(0x61, 'emitter')
     # The existing "Particle" texture name also names the independent second
     # particle resource; textures and model resources have separate namespaces.
@@ -171,10 +185,49 @@ def adapt_gameplay(script, names):
         if name_id == names.index('beginSprite') and size == 1139:
             initialize = (bytes.fromhex('43001e') + encode(0x4f, 2, names.index('browserConsole')) +
                           bytes([0x03]) + encode(0x4f, 2, names.index('browserConsoleVersion')) +
-                          bytes.fromhex('4b00') + encode(0x4f, 2, names.index('browserGameplay')))
+                          bytes.fromhex('4b00') + encode(0x4f, 2, names.index('browserGameplay')) +
+                          b'\x03' + named(0x4f, 'browserCartYaw'))
             adapted = insert_bytecode(code, {0: initialize})
             label = 'beginSprite: initialize bounded browser console mirror'
         elif name_id == names.index('prepareFrame'):
+            assert code[220:224] == bytes.fromhex('49534ab2') and code[235:237] == bytes.fromhex('67b4')
+            # Park both pieces when this client is not driving. The runtime's
+            # Z-up contacts otherwise accelerate the unattended Y-up vehicle.
+            parked = bytearray()
+            zero = b'\x03\x03\x03' + bytes.fromhex('4303') + named(0x57, 'vector')
+            for body_name in ['Car', 'Spring']:
+                body = body_ref(body_name)
+                for prop in ['linearVelocity', 'angularVelocity']:
+                    parked.extend(body + zero + named(0x62, prop))
+            driving = named(0x49, 'AvatarMode') + literal_for('Driving') + b'\x0f'
+            park_if_idle = driving + encode(0x55, 2, 6) + encode(0x53, 2, len(parked) + 3) + parked
+            contacts = ground_contact(body_ref('Car'), 50, 'OnGround')
+            car = body_ref('Car')
+            spring = body_ref('Spring')
+            position = car + named(0x61, 'position')
+            velocity = car + named(0x61, 'linearVelocity')
+            # Keep the original DrivePlayer impulses and steering. Integrate
+            # their result in Y-up coordinates without sending the cart through
+            # the runtime's incompatible Z-up collision/suspension solver.
+            # Reuse the authored floating-point 0.022 literal: integer 22/1000
+            # truncates to zero when FrameMod is the integer stall cap.
+            dt = named(0x4a, 'FrameMod') + bytes.fromhex('443404')
+            accelerate = car + velocity + named(0x49, 'havok') + named(0x61, 'gravity') + dt + b'\x04\x05' + named(0x62, 'linearVelocity')
+            advance = car + position + velocity + dt + b'\x04\x05' + named(0x62, 'position')
+            yaw = named(0x49, 'browserCartYaw')
+            angular = car + named(0x61, 'angularVelocity') + named(0x61, 'y')
+            y_axis = b'\x03' + bytes.fromhex('4101') + b'\x03' + bytes.fromhex('4303') + named(0x57, 'vector')
+            yaw_step = yaw + angular + dt + b'\x04' + bytes.fromhex('81023d04410a07') + b'\x05' + named(0x4f, 'browserCartYaw')
+            rotation = yaw_step + car + y_axis + yaw + bytes.fromhex('43021e') + named(0x62, 'rotation')
+            drive_step = accelerate + advance + contacts + rotation
+            vehicle_step = driving + encode(0x55, 2, len(drive_step) + 3) + drive_step
+            # Spring carries the seat/body mesh. Follow the chassis as one
+            # stable assembly until native Y-up articulated physics is available.
+            offset = b'\x03' + bytes.fromhex('410a') + b'\x03' + bytes.fromhex('4303') + named(0x57, 'vector')
+            vehicle_step += spring + position + offset + b'\x05' + named(0x62, 'position')
+            vehicle_step += spring + car + named(0x61, 'rotation') + named(0x62, 'rotation')
+            for body in [car, spring]:
+                vehicle_step += body + b'\x03' + named(0x62, 'active')
             # Snapshot existing players and their head anchors. Reading
             # globals avoids executing debug expressions on every UI poll.
             head = bytes.fromhex('41008100cd41004303') + named(0x57, 'vector')
@@ -200,8 +253,8 @@ def adapt_gameplay(script, names):
             start_particles = b''.join(emitter + bytes.fromhex('4114') + named(0x62, 'numParticles') for emitter in (rocket, rocket_right))
             snapshot.extend(rocket + named(0x61, 'loop') + encode(0x55, 2, len(start_particles) + 3) + start_particles)
             assert code[-1:] == b'\x01'
-            adapted = insert_bytecode(code, {len(code) - 1: bytes(snapshot)})
-            label = 'prepareFrame: snapshot nameplates and synchronize both jetpack emitter world positions and thrust state'
+            adapted = insert_bytecode(code, {0: park_if_idle + contacts, 220: vehicle_step, len(code) - 1: bytes(snapshot)})
+            label = 'prepareFrame: Y-up cart fallback, nameplates and original twin jetpack emitters'
         elif name_id == names.index('MakeRocketPack'):
             assert size == 359 and code[44:48] == bytes.fromhex('492244c4')
             assert code[287:291] == bytes.fromhex('492244d5')
@@ -219,21 +272,15 @@ def adapt_gameplay(script, names):
             # gravity are Y-up. WalkPlayer supplies the original heightfield
             # floor instead of letting this mismatched contact slide the body.
             disable = named(0x49, 'havok') + literal_for('Walk') + literal_for('GroundShape') + bytes.fromhex('4203') + named(0x67, 'disableCollision')
+            # Native dashpots mutate even inactive bodies. Disable these two
+            # actions when the seat follows the chassis in the Y-up fallback.
+            for kind, constraint in [('linearDashpot', 'mydashpot'), ('angularDashpot', 'myandashpot')]:
+                disable += named(0x49, 'havok') + literal_for(constraint) + bytes.fromhex('4302') + named(0x67, kind) + b'\x03' + named(0x62, 'strength')
             assert code[-1:] == b'\x01'
             adapted = insert_bytecode(code, {len(code) - 1: disable})
-            label = 'SetupPhysics: use the original Y-up heightfield for walking terrain contact'
+            label = 'SetupPhysics: Y-up walking contact and disable native vehicle dashpots for the cart fallback'
         elif name_id == names.index('WalkPlayer'):
-            height = named(0x49, 'browserGroundHeight')
-            position = walk_body + named(0x61, 'position')
-            velocity = walk_body + named(0x61, 'linearVelocity')
-            sample = position + b'\x03' + bytes.fromhex('4302') + named(0x57, 'checkheight') + bytes.fromhex('413205') + named(0x4f, 'browserGroundHeight')
-            def vector_at_y(source, y):
-                return source + named(0x61, 'x') + y + source + named(0x61, 'z') + bytes.fromhex('4303') + named(0x57, 'vector')
-            floor = (walk_body + vector_at_y(position, height) + named(0x62, 'position') +
-                     walk_body + vector_at_y(velocity, b'\x03') + named(0x62, 'linearVelocity') +
-                     bytes.fromhex('4101') + named(0x50, 'ongroundwalk'))
-            grounded = position + named(0x61, 'y') + height + b'\x0d' + velocity + named(0x61, 'y') + b'\x03\x0d\x12'
-            adapted = insert_bytecode(code, {0: sample + grounded + encode(0x55, 2, len(floor) + 3) + floor})
+            adapted = insert_bytecode(code, {0: ground_contact(walk_body, 50, 'ongroundwalk')})
             label = 'WalkPlayer: restore Y-up ground contact and original idle braking; preserve airborne momentum'
         elif name_id == names.index('FramerateTest'):
             # Avoid a background-tab stall producing a multi-second Havok step
@@ -252,6 +299,7 @@ def adapt_gameplay(script, names):
             # Score position tweening overwrites script-controlled loc each
             # frame unless the channel is puppeted. Reapply the original
             # formula before the unchanged-size early return as well.
+            reset_viewport = b''.join(bytes.fromhex('41014301575003') + named(0x62, prop) for prop in ['rotation', 'skew'])
             puppet = (bytes.fromhex('4104430157504101') +
                       encode(0x62, 2, names.index('puppet')))
             panel = b''.join(
@@ -260,8 +308,8 @@ def adapt_gameplay(script, names):
                 encode(0x44, 1, 51) + bytes([0x0f]) +
                 encode(0x62, 1, names.index('visible'))
                 for channel in range(2, 18))
-            adapted = insert_bytecode(code, {24: puppet + code[146:179] + panel})
-            label = 'CheckWindowRescale: keep gravity knob on track and show setup panel only in CharacterSetup'
+            adapted = insert_bytecode(code, {24: reset_viewport + puppet + code[146:179] + panel})
+            label = 'CheckWindowRescale: reset viewport skew/rotation, keep gravity knob on track and setup panel visibility'
         elif name_id == names.index('endSprite'):
             unpuppet = (bytes.fromhex('4104430157504100') +
                         encode(0x62, 2, names.index('puppet')))
@@ -402,7 +450,7 @@ def prepare(root):
         cursor += 1 + length
     names.append('getNetMessage')
     names.append('puppet')
-    names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay', 'browserGroundHeight'])
+    names.extend(['browserConsole', 'browserConsoleVersion', 'browserLabels', 'browserGameplay', 'browserGroundHeight', 'browserCartYaw'])
     for name in ['getAt', 'region']:
         if name not in names:
             names.append(name)

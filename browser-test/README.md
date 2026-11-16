@@ -141,6 +141,16 @@ The runtime uses a nozzle model's local position as its particle origin and shar
 
 The adapter gives the right nozzle an independent resource (named `Particle`, in the separate model-resource namespace), copying the original setup bytecode with only the resource name changed. Both streams retain the original particle texture, yellow-to-red colors, opacity, speeds, sizes, lifetime and nozzle transforms. Each frame supplies both nozzles' world positions as emitter regions and mirrors the original resource's thrust switch to the second stream. Particle counts start at zero to avoid the runtime's initial one-shot burst, then become the original 20 per nozzle on first thrust. The original control logic still controls timing; neither stream loops after Ctrl release. Both native particle streams were visually checked during actual Ctrl thrust.
 
+### Viewport tilt and mooncart fallback
+
+The score supplies sprite 1 with rotation −2.6° and skew 1.18° in this runtime, turning the entire 3D view into a slanted quadrilateral. `CheckWindowRescale` now resets those two 2D transforms every frame; the 3D follow camera retains its own rotation.
+
+The native Havok mesh-contact and suspension implementation sends the Y-up cart sliding sideways, flipping, or separating its chassis and seat. The movie adapter now parks unattended carts and uses a limited Y-up vehicle fallback while driving. The original `DrivePlayer` acceleration, reverse, steering, and spacebar handbrake impulses remain in control. The adapter integrates their velocity using the original `FrameMod * 0.022` timestep, applies gravity and the original `checkheight` floor with a 50-unit ride height, and holds the seat assembly ten units above the chassis. Yaw is accumulated separately to avoid unstable Euler-angle round trips. Both native cart bodies remain inactive during the shared Havok step, and their two native dashpots have zero strength.
+
+This is an interim vehicle controller: articulated suspension, pitch/roll over terrain, rock/ramp collisions, and collisions with other bodies are not reproduced for the cart. Walking and jetpack still use their existing physics path. Chat passes +/= to the original vehicle exit handler while driving.
+
+For a 20-second read-only trace, enter `@physics` in the local Lingo diagnostics console and hold game keys in the stage. It samples actual input, gravity, thrust, and body positions/velocities without changing them. At gravity 125, a three-second Ctrl test rose from Y −664 to Y +689 and landed back at the original floor. The user's reported failure had gravity 234: the original impulse (100 / mass 30 per FrameMod) only overcomes gravity below about 151.5 with the authored 0.022 timestep. Lower the gravity slider for takeoff; the adapter does not silently change the original rocket power.
+
 ## Ubuntu deployment
 
 See [deploy/README.md](deploy/README.md) and run `./browser-test/deploy/deploy.sh root@YOUR_VPS_IP` from the project directory. The default domain is moonbasemmo.com. The installer replaces the authorized HMC frontend, configures automatic HTTPS through Caddy, and manages a loopback-only game/SMUS bridge through systemd. Production mode supports the HTTPS origin and disables shared browser logs; it does not install a replacement multiplayer backend.
