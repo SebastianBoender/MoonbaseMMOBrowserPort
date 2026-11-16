@@ -196,3 +196,5 @@ Fullscreen now expands the stage to fit the display while preserving its aspect 
 ### Separate Modern client
 
 The default entry remains Original. Choose **Modern client** (or open `/?client=modern`) for optional 720p, 1080p, 1440p/QHD (2K) and 4K/UHD rendering. The original aspect ratio and authored UI are preserved; quality changes do not reconnect multiplayer. Modern includes capability checks, safe rollback, context recovery and local frame-time diagnostics. See [MODERN-CLIENT.md](MODERN-CLIENT.md) for dimensions, architecture, build provenance, validation and limitations.
+
+Mouse-wheel camera zoom works in both clients while frame 5 is running. Scroll down to widen the 3D view, down to 50% of the original projection scale; scroll up to restore 100%. It never zooms closer than the authored POV. This is a lens/projection adjustment, so camera collisions, physics, UI and input coordinates stay unchanged. Nameplates use the adjusted projection. Browser pinch zoom and scrolling over chat/forms remain available. Relaunching resets the view to 100%.

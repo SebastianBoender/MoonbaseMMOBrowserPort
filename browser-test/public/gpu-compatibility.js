@@ -25,6 +25,11 @@
           'v_texcoord = u_uv_proj_mode == 5 ? (u_tex_transform * u_wrap_transform * vec4(a_position, 1.0)).xy / vec2(textureSize(u_diffuse_tex, 0)) : (u_tex_transform * vec4(base_uv, 0.0, 1.0)).xy;');
         }
       }
+      // Apply to the scene projection at upload time, so the observed camera
+      // used by browser nameplates has exactly the same projection as the GPU.
+      if (name === 'uniformMatrix4fv' && locations.get(args[0]) === 'u_projection' && window.moonbaseZoom && args[2]?.length === 16 && Math.abs(args[2][15]) < 1e-6 && Math.abs(args[2][11]) > 0.5 && this.canvas?.getAttribute('data-dp-stage') === '1') {
+        args[2] = window.moonbaseZoom.projection(args[2]);
+      }
       const result = native.apply(this, args);
       if (name === 'shaderSource' && trace) state.shaders.push(args[1]);
       else if (name === 'getUniformLocation' && result) locations.set(result, args[1]);
