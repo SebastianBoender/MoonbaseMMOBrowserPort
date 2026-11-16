@@ -1,0 +1,5 @@
+Proj.dll: embedded offset 0x59d58, byte-identical=True
+Dirapi.dll: embedded offset 0xc62d8, byte-identical=True
+Iml32.dll: embedded offset 0x27ac58, byte-identical=True
+msvcr100.dll: embedded offset 0x3707d8, byte-identical=True
+msvcp100.dll: embedded offset 0x42d728, byte-identical=True

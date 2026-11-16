@@ -1,0 +1,1557 @@
+[
+  {
+    "id": 0,
+    "tag": "RIFX",
+    "offset": 4805892,
+    "length": 2267646,
+    "flags": 1
+  },
+  {
+    "id": 1,
+    "tag": "imap",
+    "offset": 4805904,
+    "length": 24,
+    "flags": 1
+  },
+  {
+    "id": 2,
+    "tag": "mmap",
+    "offset": 4805936,
+    "length": 30644,
+    "flags": 0
+  },
+  {
+    "id": 3,
+    "tag": "KEY*",
+    "offset": 4836588,
+    "length": 1812,
+    "flags": 0
+  },
+  {
+    "id": 8,
+    "tag": "CASt",
+    "offset": 4851154,
+    "length": 40,
+    "flags": 0
+  },
+  {
+    "id": 23,
+    "tag": "CASt",
+    "offset": 4851202,
+    "length": 63,
+    "flags": 0
+  },
+  {
+    "id": 39,
+    "tag": "CASt",
+    "offset": 4883838,
+    "length": 585,
+    "flags": 0
+  },
+  {
+    "id": 47,
+    "tag": "CASt",
+    "offset": 4884432,
+    "length": 170,
+    "flags": 0
+  },
+  {
+    "id": 48,
+    "tag": "CASt",
+    "offset": 4884610,
+    "length": 587,
+    "flags": 0
+  },
+  {
+    "id": 50,
+    "tag": "CASt",
+    "offset": 4967588,
+    "length": 59,
+    "flags": 0
+  },
+  {
+    "id": 73,
+    "tag": "CASt",
+    "offset": 4879502,
+    "length": 163,
+    "flags": 0
+  },
+  {
+    "id": 92,
+    "tag": "CASt",
+    "offset": 4965080,
+    "length": 55,
+    "flags": 0
+  },
+  {
+    "id": 96,
+    "tag": "CASt",
+    "offset": 4888880,
+    "length": 66,
+    "flags": 0
+  },
+  {
+    "id": 117,
+    "tag": "CASt",
+    "offset": 4880338,
+    "length": 163,
+    "flags": 0
+  },
+  {
+    "id": 125,
+    "tag": "CASt",
+    "offset": 4967900,
+    "length": 575,
+    "flags": 0
+  },
+  {
+    "id": 127,
+    "tag": "CASt",
+    "offset": 4879916,
+    "length": 167,
+    "flags": 0
+  },
+  {
+    "id": 128,
+    "tag": "CASt",
+    "offset": 4879746,
+    "length": 162,
+    "flags": 0
+  },
+  {
+    "id": 129,
+    "tag": "CASt",
+    "offset": 4850822,
+    "length": 149,
+    "flags": 0
+  },
+  {
+    "id": 130,
+    "tag": "CASt",
+    "offset": 4879674,
+    "length": 63,
+    "flags": 0
+  },
+  {
+    "id": 132,
+    "tag": "CASt",
+    "offset": 4880164,
+    "length": 165,
+    "flags": 0
+  },
+  {
+    "id": 160,
+    "tag": "CASt",
+    "offset": 4967726,
+    "length": 165,
+    "flags": 0
+  },
+  {
+    "id": 183,
+    "tag": "CASt",
+    "offset": 4967656,
+    "length": 61,
+    "flags": 0
+  },
+  {
+    "id": 184,
+    "tag": "CASt",
+    "offset": 4850980,
+    "length": 166,
+    "flags": 0
+  },
+  {
+    "id": 196,
+    "tag": "CASt",
+    "offset": 4880092,
+    "length": 63,
+    "flags": 0
+  },
+  {
+    "id": 202,
+    "tag": "CASt",
+    "offset": 4966828,
+    "length": 575,
+    "flags": 0
+  },
+  {
+    "id": 203,
+    "tag": "CASt",
+    "offset": 4882062,
+    "length": 175,
+    "flags": 0
+  },
+  {
+    "id": 213,
+    "tag": "CASt",
+    "offset": 4964490,
+    "length": 582,
+    "flags": 0
+  },
+  {
+    "id": 230,
+    "tag": "CASt",
+    "offset": 4880874,
+    "length": 167,
+    "flags": 0
+  },
+  {
+    "id": 231,
+    "tag": "CASt",
+    "offset": 4880510,
+    "length": 176,
+    "flags": 0
+  },
+  {
+    "id": 252,
+    "tag": "CASt",
+    "offset": 4885206,
+    "length": 162,
+    "flags": 0
+  },
+  {
+    "id": 340,
+    "tag": "CASt",
+    "offset": 4882294,
+    "length": 173,
+    "flags": 0
+  },
+  {
+    "id": 347,
+    "tag": "CASt",
+    "offset": 4881618,
+    "length": 172,
+    "flags": 0
+  },
+  {
+    "id": 348,
+    "tag": "CASt",
+    "offset": 4880694,
+    "length": 171,
+    "flags": 0
+  },
+  {
+    "id": 367,
+    "tag": "CASt",
+    "offset": 4881870,
+    "length": 183,
+    "flags": 0
+  },
+  {
+    "id": 451,
+    "tag": "CASt",
+    "offset": 4881050,
+    "length": 59,
+    "flags": 0
+  },
+  {
+    "id": 485,
+    "tag": "CASt",
+    "offset": 4883242,
+    "length": 587,
+    "flags": 0
+  },
+  {
+    "id": 486,
+    "tag": "CASt",
+    "offset": 4881118,
+    "length": 172,
+    "flags": 0
+  },
+  {
+    "id": 492,
+    "tag": "CASt",
+    "offset": 4968484,
+    "length": 584,
+    "flags": 0
+  },
+  {
+    "id": 493,
+    "tag": "CASt",
+    "offset": 4881798,
+    "length": 63,
+    "flags": 0
+  },
+  {
+    "id": 512,
+    "tag": "CASt",
+    "offset": 4965144,
+    "length": 67,
+    "flags": 0
+  },
+  {
+    "id": 517,
+    "tag": "CASt",
+    "offset": 4882542,
+    "length": 86,
+    "flags": 0
+  },
+  {
+    "id": 567,
+    "tag": "CASt",
+    "offset": 4850310,
+    "length": 503,
+    "flags": 0
+  },
+  {
+    "id": 569,
+    "tag": "CASt",
+    "offset": 4882246,
+    "length": 40,
+    "flags": 0
+  },
+  {
+    "id": 625,
+    "tag": "CASt",
+    "offset": 4967412,
+    "length": 167,
+    "flags": 0
+  },
+  {
+    "id": 646,
+    "tag": "CASt",
+    "offset": 4969252,
+    "length": 170,
+    "flags": 0
+  },
+  {
+    "id": 680,
+    "tag": "CASt",
+    "offset": 4888810,
+    "length": 61,
+    "flags": 0
+  },
+  {
+    "id": 687,
+    "tag": "CASt",
+    "offset": 4882636,
+    "length": 65,
+    "flags": 0
+  },
+  {
+    "id": 700,
+    "tag": "CASt",
+    "offset": 4969076,
+    "length": 167,
+    "flags": 0
+  },
+  {
+    "id": 720,
+    "tag": "CASt",
+    "offset": 4890226,
+    "length": 588,
+    "flags": 0
+  },
+  {
+    "id": 752,
+    "tag": "CASt",
+    "offset": 4888954,
+    "length": 61,
+    "flags": 0
+  },
+  {
+    "id": 753,
+    "tag": "CASt",
+    "offset": 4889024,
+    "length": 591,
+    "flags": 0
+  },
+  {
+    "id": 754,
+    "tag": "CASt",
+    "offset": 4889624,
+    "length": 593,
+    "flags": 0
+  },
+  {
+    "id": 763,
+    "tag": "CASt",
+    "offset": 4882476,
+    "length": 58,
+    "flags": 0
+  },
+  {
+    "id": 764,
+    "tag": "CASt",
+    "offset": 4881436,
+    "length": 174,
+    "flags": 0
+  },
+  {
+    "id": 766,
+    "tag": "CASt",
+    "offset": 4888194,
+    "length": 608,
+    "flags": 0
+  },
+  {
+    "id": 768,
+    "tag": "CASt",
+    "offset": 4887944,
+    "length": 67,
+    "flags": 0
+  },
+  {
+    "id": 769,
+    "tag": "CASt",
+    "offset": 4887360,
+    "length": 575,
+    "flags": 0
+  },
+  {
+    "id": 770,
+    "tag": "CASt",
+    "offset": 4886762,
+    "length": 589,
+    "flags": 0
+  },
+  {
+    "id": 771,
+    "tag": "CASt",
+    "offset": 4886698,
+    "length": 55,
+    "flags": 0
+  },
+  {
+    "id": 772,
+    "tag": "CASt",
+    "offset": 4886104,
+    "length": 585,
+    "flags": 0
+  },
+  {
+    "id": 773,
+    "tag": "CASt",
+    "offset": 4886040,
+    "length": 55,
+    "flags": 0
+  },
+  {
+    "id": 774,
+    "tag": "CASt",
+    "offset": 4885442,
+    "length": 589,
+    "flags": 0
+  },
+  {
+    "id": 775,
+    "tag": "CASt",
+    "offset": 4885376,
+    "length": 58,
+    "flags": 0
+  },
+  {
+    "id": 777,
+    "tag": "CASt",
+    "offset": 4881366,
+    "length": 61,
+    "flags": 0
+  },
+  {
+    "id": 778,
+    "tag": "CASt",
+    "offset": 4881298,
+    "length": 60,
+    "flags": 0
+  },
+  {
+    "id": 779,
+    "tag": "CASt",
+    "offset": 4964346,
+    "length": 59,
+    "flags": 0
+  },
+  {
+    "id": 780,
+    "tag": "CASt",
+    "offset": 4964414,
+    "length": 67,
+    "flags": 0
+  },
+  {
+    "id": 784,
+    "tag": "CASt",
+    "offset": 4891800,
+    "length": 575,
+    "flags": 0
+  },
+  {
+    "id": 821,
+    "tag": "CASt",
+    "offset": 4882710,
+    "length": 524,
+    "flags": 0
+  },
+  {
+    "id": 840,
+    "tag": "CASt",
+    "offset": 4892384,
+    "length": 575,
+    "flags": 0
+  },
+  {
+    "id": 853,
+    "tag": "CASt",
+    "offset": 4890822,
+    "length": 970,
+    "flags": 0
+  },
+  {
+    "id": 858,
+    "tag": "CASt",
+    "offset": 4893038,
+    "length": 60,
+    "flags": 0
+  },
+  {
+    "id": 866,
+    "tag": "CASt",
+    "offset": 4973356,
+    "length": 166,
+    "flags": 0
+  },
+  {
+    "id": 867,
+    "tag": "CASt",
+    "offset": 4973292,
+    "length": 55,
+    "flags": 0
+  },
+  {
+    "id": 868,
+    "tag": "CASt",
+    "offset": 4973228,
+    "length": 56,
+    "flags": 0
+  },
+  {
+    "id": 869,
+    "tag": "CASt",
+    "offset": 4972036,
+    "length": 588,
+    "flags": 0
+  },
+  {
+    "id": 870,
+    "tag": "CASt",
+    "offset": 4971446,
+    "length": 582,
+    "flags": 0
+  },
+  {
+    "id": 872,
+    "tag": "CASt",
+    "offset": 4970790,
+    "length": 583,
+    "flags": 0
+  },
+  {
+    "id": 873,
+    "tag": "CASt",
+    "offset": 4970714,
+    "length": 68,
+    "flags": 0
+  },
+  {
+    "id": 874,
+    "tag": "CASt",
+    "offset": 4888020,
+    "length": 165,
+    "flags": 0
+  },
+  {
+    "id": 884,
+    "tag": "CASt",
+    "offset": 4971382,
+    "length": 55,
+    "flags": 0
+  },
+  {
+    "id": 908,
+    "tag": "CASt",
+    "offset": 4972632,
+    "length": 588,
+    "flags": 0
+  },
+  {
+    "id": 911,
+    "tag": "CASt",
+    "offset": 4893106,
+    "length": 59,
+    "flags": 0
+  },
+  {
+    "id": 914,
+    "tag": "CASt",
+    "offset": 4851274,
+    "length": 28219,
+    "flags": 0
+  },
+  {
+    "id": 1053,
+    "tag": "CASt",
+    "offset": 4892968,
+    "length": 61,
+    "flags": 0
+  },
+  {
+    "id": 1054,
+    "tag": "CAS*",
+    "offset": 4850034,
+    "length": 268,
+    "flags": 0
+  },
+  {
+    "id": 1055,
+    "tag": "LctX",
+    "offset": 4893174,
+    "length": 396,
+    "flags": 0
+  },
+  {
+    "id": 1056,
+    "tag": "Fmap",
+    "offset": 4964140,
+    "length": 94,
+    "flags": 0
+  },
+  {
+    "id": 1058,
+    "tag": "Cinf",
+    "offset": 4849966,
+    "length": 60,
+    "flags": 0
+  },
+  {
+    "id": 1059,
+    "tag": "Lnam",
+    "offset": 4951582,
+    "length": 12542,
+    "flags": 0
+  },
+  {
+    "id": 1060,
+    "tag": "Lscr",
+    "offset": 4893578,
+    "length": 500,
+    "flags": 0
+  },
+  {
+    "id": 1061,
+    "tag": "Lscr",
+    "offset": 4894086,
+    "length": 184,
+    "flags": 0
+  },
+  {
+    "id": 1062,
+    "tag": "Lscr",
+    "offset": 4894278,
+    "length": 2702,
+    "flags": 0
+  },
+  {
+    "id": 1063,
+    "tag": "Lscr",
+    "offset": 4896988,
+    "length": 4958,
+    "flags": 0
+  },
+  {
+    "id": 1064,
+    "tag": "Lscr",
+    "offset": 4901954,
+    "length": 636,
+    "flags": 0
+  },
+  {
+    "id": 1065,
+    "tag": "Lscr",
+    "offset": 4902598,
+    "length": 872,
+    "flags": 0
+  },
+  {
+    "id": 1066,
+    "tag": "Lscr",
+    "offset": 4903478,
+    "length": 1186,
+    "flags": 0
+  },
+  {
+    "id": 1067,
+    "tag": "Lscr",
+    "offset": 4904672,
+    "length": 182,
+    "flags": 0
+  },
+  {
+    "id": 1068,
+    "tag": "Lscr",
+    "offset": 4904862,
+    "length": 4162,
+    "flags": 0
+  },
+  {
+    "id": 1069,
+    "tag": "Lscr",
+    "offset": 4909032,
+    "length": 1474,
+    "flags": 0
+  },
+  {
+    "id": 1070,
+    "tag": "Lscr",
+    "offset": 4910514,
+    "length": 324,
+    "flags": 0
+  },
+  {
+    "id": 1071,
+    "tag": "Lscr",
+    "offset": 4910846,
+    "length": 162,
+    "flags": 0
+  },
+  {
+    "id": 1072,
+    "tag": "Lscr",
+    "offset": 4911016,
+    "length": 726,
+    "flags": 0
+  },
+  {
+    "id": 1073,
+    "tag": "Lscr",
+    "offset": 4911750,
+    "length": 726,
+    "flags": 0
+  },
+  {
+    "id": 1074,
+    "tag": "Lscr",
+    "offset": 4912484,
+    "length": 456,
+    "flags": 0
+  },
+  {
+    "id": 1075,
+    "tag": "Lscr",
+    "offset": 4912948,
+    "length": 408,
+    "flags": 0
+  },
+  {
+    "id": 1076,
+    "tag": "Lscr",
+    "offset": 4913364,
+    "length": 412,
+    "flags": 0
+  },
+  {
+    "id": 1077,
+    "tag": "Lscr",
+    "offset": 4913784,
+    "length": 20396,
+    "flags": 0
+  },
+  {
+    "id": 1078,
+    "tag": "Lscr",
+    "offset": 4934188,
+    "length": 17386,
+    "flags": 0
+  },
+  {
+    "id": 1079,
+    "tag": "XMED",
+    "offset": 6048054,
+    "length": 326420,
+    "flags": 0,
+    "shockwave_3d_signature": true,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1081,
+    "tag": "BITD",
+    "offset": 6472622,
+    "length": 3377,
+    "flags": 0
+  },
+  {
+    "id": 1082,
+    "tag": "ALFA",
+    "offset": 6476008,
+    "length": 276,
+    "flags": 0
+  },
+  {
+    "id": 1083,
+    "tag": "XMED",
+    "offset": 4982668,
+    "length": 3313,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": true
+  },
+  {
+    "id": 1084,
+    "tag": "BITD",
+    "offset": 6476292,
+    "length": 199156,
+    "flags": 0
+  },
+  {
+    "id": 1085,
+    "tag": "ALFA",
+    "offset": 6675456,
+    "length": 1536,
+    "flags": 0
+  },
+  {
+    "id": 1086,
+    "tag": "BITD",
+    "offset": 6677000,
+    "length": 3475,
+    "flags": 0
+  },
+  {
+    "id": 1087,
+    "tag": "BITD",
+    "offset": 6680484,
+    "length": 11591,
+    "flags": 0
+  },
+  {
+    "id": 1088,
+    "tag": "ALFA",
+    "offset": 6692084,
+    "length": 128,
+    "flags": 0
+  },
+  {
+    "id": 1089,
+    "tag": "BITD",
+    "offset": 6692220,
+    "length": 4672,
+    "flags": 0
+  },
+  {
+    "id": 1090,
+    "tag": "BITD",
+    "offset": 6696900,
+    "length": 50263,
+    "flags": 0
+  },
+  {
+    "id": 1091,
+    "tag": "ALFA",
+    "offset": 6747172,
+    "length": 512,
+    "flags": 0
+  },
+  {
+    "id": 1092,
+    "tag": "BITD",
+    "offset": 6747692,
+    "length": 4036,
+    "flags": 0
+  },
+  {
+    "id": 1093,
+    "tag": "BITD",
+    "offset": 5265530,
+    "length": 760516,
+    "flags": 0
+  },
+  {
+    "id": 1094,
+    "tag": "ALFA",
+    "offset": 6026054,
+    "length": 5120,
+    "flags": 0
+  },
+  {
+    "id": 1095,
+    "tag": "BITD",
+    "offset": 6751736,
+    "length": 12572,
+    "flags": 0
+  },
+  {
+    "id": 1096,
+    "tag": "ALFA",
+    "offset": 6764316,
+    "length": 128,
+    "flags": 0
+  },
+  {
+    "id": 1097,
+    "tag": "BITD",
+    "offset": 6764452,
+    "length": 3405,
+    "flags": 0
+  },
+  {
+    "id": 1098,
+    "tag": "ALFA",
+    "offset": 6767866,
+    "length": 285,
+    "flags": 0
+  },
+  {
+    "id": 1099,
+    "tag": "BITD",
+    "offset": 4985990,
+    "length": 271077,
+    "flags": 0
+  },
+  {
+    "id": 1100,
+    "tag": "ALFA",
+    "offset": 5257076,
+    "length": 2004,
+    "flags": 0
+  },
+  {
+    "id": 1101,
+    "tag": "BITD",
+    "offset": 6768160,
+    "length": 199719,
+    "flags": 0
+  },
+  {
+    "id": 1102,
+    "tag": "ALFA",
+    "offset": 6967888,
+    "length": 1536,
+    "flags": 0
+  },
+  {
+    "id": 1103,
+    "tag": "BITD",
+    "offset": 6969432,
+    "length": 16491,
+    "flags": 0
+  },
+  {
+    "id": 1104,
+    "tag": "ALFA",
+    "offset": 6985932,
+    "length": 14955,
+    "flags": 0
+  },
+  {
+    "id": 1105,
+    "tag": "BITD",
+    "offset": 7000896,
+    "length": 3994,
+    "flags": 0
+  },
+  {
+    "id": 1106,
+    "tag": "BITD",
+    "offset": 6451060,
+    "length": 1358,
+    "flags": 0
+  },
+  {
+    "id": 1107,
+    "tag": "ALFA",
+    "offset": 6452426,
+    "length": 68,
+    "flags": 0
+  },
+  {
+    "id": 1108,
+    "tag": "STXT",
+    "offset": 6472568,
+    "length": 46,
+    "flags": 0
+  },
+  {
+    "id": 1109,
+    "tag": "XMED",
+    "offset": 7004898,
+    "length": 115,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": true
+  },
+  {
+    "id": 1110,
+    "tag": "XMED",
+    "offset": 7005022,
+    "length": 1664,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1111,
+    "tag": "XMED",
+    "offset": 7006694,
+    "length": 1162,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1112,
+    "tag": "BITD",
+    "offset": 7007864,
+    "length": 49510,
+    "flags": 0
+  },
+  {
+    "id": 1113,
+    "tag": "ALFA",
+    "offset": 7057382,
+    "length": 12106,
+    "flags": 0
+  },
+  {
+    "id": 1114,
+    "tag": "XMED",
+    "offset": 7069496,
+    "length": 1273,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1115,
+    "tag": "BITD",
+    "offset": 6452502,
+    "length": 924,
+    "flags": 0
+  },
+  {
+    "id": 1116,
+    "tag": "ALFA",
+    "offset": 6453434,
+    "length": 170,
+    "flags": 0
+  },
+  {
+    "id": 1117,
+    "tag": "XMED",
+    "offset": 5259520,
+    "length": 1602,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1118,
+    "tag": "XMED",
+    "offset": 5261130,
+    "length": 1214,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1119,
+    "tag": "XMED",
+    "offset": 5263970,
+    "length": 1551,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1120,
+    "tag": "XMED",
+    "offset": 5262352,
+    "length": 1482,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1121,
+    "tag": "BITD",
+    "offset": 5259088,
+    "length": 364,
+    "flags": 0
+  },
+  {
+    "id": 1122,
+    "tag": "ALFA",
+    "offset": 5259460,
+    "length": 52,
+    "flags": 0
+  },
+  {
+    "id": 1123,
+    "tag": "XMED",
+    "offset": 5263842,
+    "length": 120,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": true
+  },
+  {
+    "id": 1124,
+    "tag": "XMED",
+    "offset": 7070778,
+    "length": 1155,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1125,
+    "tag": "XMED",
+    "offset": 7071942,
+    "length": 1596,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1126,
+    "tag": "XMED",
+    "offset": 6031330,
+    "length": 1724,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1127,
+    "tag": "XMED",
+    "offset": 6031182,
+    "length": 139,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": true
+  },
+  {
+    "id": 1128,
+    "tag": "XMED",
+    "offset": 6034582,
+    "length": 1653,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1129,
+    "tag": "XMED",
+    "offset": 6036244,
+    "length": 1663,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1130,
+    "tag": "CAS*",
+    "offset": 4964310,
+    "length": 28,
+    "flags": 0
+  },
+  {
+    "id": 1131,
+    "tag": "LctX",
+    "offset": 4965220,
+    "length": 168,
+    "flags": 0
+  },
+  {
+    "id": 1132,
+    "tag": "Fmap",
+    "offset": 4966610,
+    "length": 94,
+    "flags": 0
+  },
+  {
+    "id": 1134,
+    "tag": "Cinf",
+    "offset": 4964242,
+    "length": 60,
+    "flags": 0
+  },
+  {
+    "id": 1135,
+    "tag": "Lnam",
+    "offset": 4966408,
+    "length": 186,
+    "flags": 0
+  },
+  {
+    "id": 1136,
+    "tag": "Lscr",
+    "offset": 4965396,
+    "length": 226,
+    "flags": 0
+  },
+  {
+    "id": 1137,
+    "tag": "Lscr",
+    "offset": 4965630,
+    "length": 234,
+    "flags": 0
+  },
+  {
+    "id": 1138,
+    "tag": "Lscr",
+    "offset": 4965872,
+    "length": 306,
+    "flags": 0
+  },
+  {
+    "id": 1139,
+    "tag": "Lscr",
+    "offset": 4966186,
+    "length": 214,
+    "flags": 0
+  },
+  {
+    "id": 1140,
+    "tag": "XMED",
+    "offset": 6455850,
+    "length": 1409,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1141,
+    "tag": "CAS*",
+    "offset": 4966780,
+    "length": 40,
+    "flags": 0
+  },
+  {
+    "id": 1142,
+    "tag": "LctX",
+    "offset": 4969430,
+    "length": 132,
+    "flags": 0
+  },
+  {
+    "id": 1143,
+    "tag": "Fmap",
+    "offset": 4970520,
+    "length": 74,
+    "flags": 0
+  },
+  {
+    "id": 1145,
+    "tag": "Cinf",
+    "offset": 4966712,
+    "length": 60,
+    "flags": 0
+  },
+  {
+    "id": 1146,
+    "tag": "Lnam",
+    "offset": 4970220,
+    "length": 284,
+    "flags": 0
+  },
+  {
+    "id": 1147,
+    "tag": "Lscr",
+    "offset": 4969570,
+    "length": 336,
+    "flags": 0
+  },
+  {
+    "id": 1148,
+    "tag": "Lscr",
+    "offset": 4969914,
+    "length": 298,
+    "flags": 0
+  },
+  {
+    "id": 1149,
+    "tag": "XMED",
+    "offset": 6453612,
+    "length": 1355,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1150,
+    "tag": "BITD",
+    "offset": 6374482,
+    "length": 76569,
+    "flags": 0
+  },
+  {
+    "id": 1151,
+    "tag": "BITD",
+    "offset": 6454976,
+    "length": 811,
+    "flags": 0
+  },
+  {
+    "id": 1152,
+    "tag": "ALFA",
+    "offset": 6455796,
+    "length": 46,
+    "flags": 0
+  },
+  {
+    "id": 1153,
+    "tag": "XMED",
+    "offset": 6457268,
+    "length": 1307,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1154,
+    "tag": "XMED",
+    "offset": 6458584,
+    "length": 1269,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1155,
+    "tag": "BITD",
+    "offset": 6459862,
+    "length": 7888,
+    "flags": 0
+  },
+  {
+    "id": 1156,
+    "tag": "BITD",
+    "offset": 6467758,
+    "length": 4802,
+    "flags": 0
+  },
+  {
+    "id": 1157,
+    "tag": "CAS*",
+    "offset": 4970670,
+    "length": 36,
+    "flags": 0
+  },
+  {
+    "id": 1158,
+    "tag": "LctX",
+    "offset": 4973530,
+    "length": 144,
+    "flags": 0
+  },
+  {
+    "id": 1161,
+    "tag": "Cinf",
+    "offset": 4970602,
+    "length": 60,
+    "flags": 0
+  },
+  {
+    "id": 1162,
+    "tag": "Lnam",
+    "offset": 4974910,
+    "length": 362,
+    "flags": 0
+  },
+  {
+    "id": 1163,
+    "tag": "Lscr",
+    "offset": 4973682,
+    "length": 792,
+    "flags": 0
+  },
+  {
+    "id": 1164,
+    "tag": "Lscr",
+    "offset": 4974482,
+    "length": 206,
+    "flags": 0
+  },
+  {
+    "id": 1165,
+    "tag": "Lscr",
+    "offset": 4974696,
+    "length": 206,
+    "flags": 0
+  },
+  {
+    "id": 1166,
+    "tag": "XMED",
+    "offset": 6044524,
+    "length": 1661,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1167,
+    "tag": "XMED",
+    "offset": 6042856,
+    "length": 1660,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1168,
+    "tag": "XMED",
+    "offset": 6037916,
+    "length": 4931,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1169,
+    "tag": "XMED",
+    "offset": 6046194,
+    "length": 1851,
+    "flags": 0,
+    "shockwave_3d_signature": false,
+    "flash_signature_in_first_20_bytes": false
+  },
+  {
+    "id": 1170,
+    "tag": "BITD",
+    "offset": 6033062,
+    "length": 1372,
+    "flags": 0
+  },
+  {
+    "id": 1171,
+    "tag": "ALFA",
+    "offset": 6034442,
+    "length": 132,
+    "flags": 0
+  },
+  {
+    "id": 1172,
+    "tag": "DRCF",
+    "offset": 4838408,
+    "length": 100,
+    "flags": 0
+  },
+  {
+    "id": 1173,
+    "tag": "FXmp",
+    "offset": 4838868,
+    "length": 7437,
+    "flags": 0
+  },
+  {
+    "id": 1174,
+    "tag": "MCsL",
+    "offset": 4848850,
+    "length": 175,
+    "flags": 0
+  },
+  {
+    "id": 1175,
+    "tag": "Sord",
+    "offset": 4838516,
+    "length": 344,
+    "flags": 0
+  },
+  {
+    "id": 1176,
+    "tag": "VWFI",
+    "offset": 4975296,
+    "length": 174,
+    "flags": 0
+  },
+  {
+    "id": 1177,
+    "tag": "VWSC",
+    "offset": 4975478,
+    "length": 7144,
+    "flags": 0
+  },
+  {
+    "id": 1179,
+    "tag": "VWLB",
+    "offset": 4982638,
+    "length": 6,
+    "flags": 0
+  },
+  {
+    "id": 1182,
+    "tag": "XTRl",
+    "offset": 4846314,
+    "length": 2527,
+    "flags": 0
+  },
+  {
+    "id": 1185,
+    "tag": "VERS",
+    "offset": 4849034,
+    "length": 28,
+    "flags": 0
+  },
+  {
+    "id": 1186,
+    "tag": "FCOL",
+    "offset": 4849070,
+    "length": 56,
+    "flags": 0
+  },
+  {
+    "id": 1187,
+    "tag": "PUBL",
+    "offset": 4849134,
+    "length": 625,
+    "flags": 0
+  },
+  {
+    "id": 1188,
+    "tag": "GRID",
+    "offset": 4849768,
+    "length": 16,
+    "flags": 0
+  },
+  {
+    "id": 1189,
+    "tag": "MDFL",
+    "offset": 4849792,
+    "length": 6,
+    "flags": 0
+  },
+  {
+    "id": 1190,
+    "tag": "SCRF",
+    "offset": 4849806,
+    "length": 24,
+    "flags": 0
+  },
+  {
+    "id": 1191,
+    "tag": "SCRF",
+    "offset": 4849838,
+    "length": 24,
+    "flags": 0
+  },
+  {
+    "id": 1192,
+    "tag": "SCRF",
+    "offset": 4849870,
+    "length": 24,
+    "flags": 0
+  },
+  {
+    "id": 1193,
+    "tag": "SCRF",
+    "offset": 4849902,
+    "length": 24,
+    "flags": 0
+  },
+  {
+    "id": 1194,
+    "tag": "SCRF",
+    "offset": 4849934,
+    "length": 24,
+    "flags": 0
+  }
+]

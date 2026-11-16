@@ -1,0 +1,24 @@
+--- a/vm-rust/src/player/handlers/datum_handlers/bitmap.rs
++++ b/vm-rust/src/player/handlers/datum_handlers/bitmap.rs
+@@ -139,7 +139,11 @@
+             } else {
+                 let x = player.get_datum(&args[0]).int_value()?;
+                 let y = player.get_datum(&args[1]).int_value()?;
+-                (x, y, false)
++                let return_integer = args.get(2)
++                    .map(|flag| player.get_datum(flag).string_value().unwrap_or_default()
++                        .eq_ignore_ascii_case("integer"))
++                    .unwrap_or(false);
++                (x, y, return_integer)
+             };
+             let color = bitmap.get_pixel_color_ref(x as u16, y as u16);
+             if return_integer {
+--- a/vm-rust/src/player/handlers/datum_handlers/cast_member/havok.rs
++++ b/vm-rust/src/player/handlers/datum_handlers/cast_member/havok.rs
+@@ -529,5 +529,5 @@
+                 "reset" => Self::reset(player, &member_ref),
+-                "rigidBody" | "rigidbody" => Self::get_rigid_body(player, &member_ref, args),
++                "RigidBody" | "rigidBody" | "rigidbody" => Self::get_rigid_body(player, &member_ref, args),
+                 "spring" => Self::get_spring(player, &member_ref, args),
+                 "linearDashpot" | "lineardashpot" => {
+                     Self::get_linear_dashpot(player, &member_ref, args)

@@ -1,0 +1,174 @@
+const regedit = require("regedit");
+const path = require("path");
+const sudo = require("sudo-prompt");
+// const dialog = require("node-native-dialog");
+
+const en = {
+  shockwave3d_fix_needed_h: `Issue detected`,
+  shockwave3d_fix_needed_p: `We detected an issue that might prevent the app from running. \nWe will try to fix it for you. You will see one or more Yes/No prompts, please click YES to all of them.`,
+  shockwave3d_fix_failed_h: `Automatic fix failed`,
+  shockwave3d_fix_failed_p: `We were unable to fix the issue. If the app doesn't run, please apply manual fix described in the link below, under "The Shockwave 3D Bad Driver List Bug":
+  https://gaming.stackexchange.com/questions/339173/how-can-i-play-dcr-shockwave-games`,
+  shockwave3d_fix_done_h: `Issue fixed`,
+  shockwave3d_fix_done_p: `The issue has been fixed. The app should now start.`,
+  shockwave3d_fix_not_needed_h: `Issue not detected`,
+  shockwave3d_fix_not_needed_p: `There are no issues that require fixing.`,
+};
+
+let locale = "en";
+
+function setup_i18n() {
+  locale = app ? app.getLocale() : navigator.language;
+  console.log(locale);
+}
+
+function t(key) {
+  return en[key];
+}
+
+function list(path) {
+  return new Promise((resolve, reject) => {
+    regedit.list(path, (err, result) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(result);
+    });
+  });
+}
+
+function execElevated(command) {
+  return new Promise((resolve, reject) => {
+    sudo.exec(
+      command,
+      {
+        name: "Nvidia fix",
+      },
+      function (error, stdout, stderror) {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(stdout);
+      }
+    );
+  });
+}
+
+function sleep(time) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, time);
+  });
+}
+
+async function* iterate_reg_keys(matcher, root_path, depth = 1) {
+  const result = await list(root_path);
+  const child_keys = result[root_path].keys || [];
+  const child_values = result[root_path].values || [];
+  for (const value_name in child_values) {
+    if (matcher.test(value_name)) {
+      yield {
+        ...child_values[value_name],
+        path: root_path,
+        name: value_name,
+      };
+    }
+  }
+  if (depth > 0) {
+    for (const child of child_keys) {
+      for await (const a of iterate_reg_keys(
+        matcher,
+        root_path + `\\` + child,
+        Math.max(0, depth - 1)
+      )) {
+        yield a;
+      }
+    }
+  }
+}
+
+async function apply_nvidia_fix() {
+  const vbsDirectory = path.join("./vbs");
+  regedit.setExternalVBSLocation(vbsDirectory);
+
+  let dialog_shown = false;
+  let needs_fixing = false;
+  let fix_failed = false;
+
+  for await (const value of iterate_reg_keys(
+    /InstalledDisplayDrivers/g,
+    `HKLM\\SYSTEM\\\CurrentControlSet\\Control\\Video`,
+    2
+  )) {
+    for (let entry of value.value) {
+      if (
+        entry.includes("C:\\") ||
+        entry.includes(".dll") ||
+        entry.includes(".exe")
+      ) {
+        needs_fixing = true;
+        break;
+      }
+    }
+    if (needs_fixing) {
+      if (!dialog_shown) {
+        console.log(t(`shockwave3d_fix_needed_p`));
+        // await dialog.show({
+        //   title: t(`shockwave3d_fix_needed_h`),
+        //   msg: t(`shockwave3d_fix_needed_p`),
+        //   icon: dialog.INFO,
+        //   buttons: dialog.OK,
+        // });
+        dialog_shown = true;
+        await sleep(3000);
+      }
+      let fixed = [];
+      for (let i = 0; i < value.value.length; i += 1) {
+        fixed[i] = value.value[i].replace(/[A-Z]+:.*[\\/]+(.+)\..+/g, "$1");
+      }
+      const fixedForExec = fixed.join("\\0");
+      try {
+        await execElevated(
+          `reg.exe ADD "${value.path}" /v ${value.name} /t REG_MULTI_SZ /d "${fixedForExec}" /f`
+        );
+      } catch (err) {
+        console.log(err);
+        fix_failed = true;
+      }
+    }
+  }
+  if (needs_fixing) {
+    if (fix_failed) {
+      console.log(t(`shockwave3d_fix_failed_p`));
+      // await dialog.show({
+      //   title: t(`shockwave3d_fix_failed_h`),
+      //   msg: t(`shockwave3d_fix_failed_p`),
+      //   icon: dialog.ERROR,
+      //   buttons: dialog.OK,
+      // });
+    } else {
+      console.log(t(`shockwave3d_fix_done_p`));
+      // await dialog.show({
+      //   title: t(`shockwave3d_fix_done_h`),
+      //   msg: t(`shockwave3d_fix_done_p`),
+      //   icon: dialog.INFO,
+      //   buttons: dialog.OK,
+      // });
+    }
+    await sleep(3000);
+  }
+  if (!needs_fixing) {
+    console.log(t(`shockwave3d_fix_not_needed_p`));
+    // await dialog.show({
+    //   title: t(`shockwave3d_fix_not_needed_h`),
+    //   msg: t(`shockwave3d_fix_not_needed_p`),
+    //   icon: dialog.INFO,
+    //   buttons: dialog.OK,
+    // });
+    dialog_shown = true;
+    await sleep(3000);
+  }
+}
+
+apply_nvidia_fix();

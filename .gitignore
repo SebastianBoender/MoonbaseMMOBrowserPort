@@ -1,0 +1,20 @@
+# Original Windows distribution and recovered proprietary game assets.
+/*.exe
+/*.dll
+/Xtras/
+/vbs/
+/browser-test/public/game/
+# Runtime downloads are reproduced and checksum-verified by setup.py.
+/browser-test/public/vendor/
+/browser-test/.cache/
+# Local sessions, downloads, generated packages and machine state.
+/browser-test/logs/
+/browser-test/verification/
+/browser-test/deploy/dist/
+__pycache__/
+*.pyc
+.env
+.env.*
+.agents/
+.codex/
+.aws/

@@ -1,0 +1,85 @@
+[
+  {
+    "file": "FIX_NVIDIA.exe",
+    "terms": [
+      "keylog",
+      "powershell",
+      "cmd.exe",
+      "cscript",
+      "wscript",
+      "reg.exe"
+    ]
+  },
+  {
+    "file": "MB_2010-10-08.exe",
+    "terms": [
+      "cmd.exe"
+    ]
+  },
+  {
+    "file": "Xtras/Media Element/Flash Asset/Flash Asset.x32",
+    "terms": [
+      "cscript"
+    ]
+  },
+  {
+    "file": "msvcr100.dll",
+    "terms": [
+      "cmd.exe"
+    ]
+  },
+  {
+    "file": "vbs/regCreateKey.wsf",
+    "terms": [
+      "cscript",
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/regDeleteKey.wsf",
+    "terms": [
+      "cscript",
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/regDeleteValue.wsf",
+    "terms": [
+      "cscript",
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/regList.wsf",
+    "terms": [
+      "cscript",
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/regListStream.wsf",
+    "terms": [
+      "cscript",
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/regPutValue.wsf",
+    "terms": [
+      "cscript",
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/regUtil.vbs",
+    "terms": [
+      "wscript"
+    ]
+  },
+  {
+    "file": "vbs/util.vbs",
+    "terms": [
+      "wscript"
+    ]
+  }
+]

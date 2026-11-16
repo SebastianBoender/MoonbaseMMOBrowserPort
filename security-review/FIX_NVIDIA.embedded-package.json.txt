@@ -1,0 +1,17 @@
+{
+  "name": "nvidia_fix",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-native-dialog": "^1.0.1",
+    "regedit": "^3.0.3",
+    "sudo-prompt": "^9.2.1"
+  }
+}

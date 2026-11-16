@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moonbase · Browser test</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><div><p class="eyebrow">MAID MARIAN / MOONBASE</p><h1>Back on the moon.</h1>
+      <p class="intro">Original game. Browser runtime. A local compatibility test.</p></div>
+      <span class="version">DIRPLAYER 0.8.1</span></header>
+    <section class="toolbar" aria-label="Player controls">
+      <button id="start" class="primary">Launch game</button>
+      <button id="reload" disabled>Restart</button>
+      <button id="fullscreen" disabled>Fullscreen</button>
+      <label>Runtime mode <select id="mode"><option value="Shockwave">Browser / Shockwave</option><option value="Projector">Original projector</option></select></label>
+      <label class="check"><input type="checkbox" id="flash" checked> Embedded Flash UI</label>
+    </section>
+    <section class="stage-shell" aria-label="Moonbase game">
+      <div id="placeholder"><div class="moon" aria-hidden="true">◐</div><h2>Moonbase, ready to load.</h2>
+        <p>Launch the game, then click the player’s play button.<br>Click inside the game to give it keyboard focus.</p></div>
+      <iframe id="game" title="Moonbase game player" hidden allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-downloads"></iframe>
+    </section>
+    <div class="status-line"><span id="status" role="status">Ready · recovered original movie</span><span>TEST · LEGACY SERVER pigyak.com:1626</span></div>
+    <p class="note">Multiplayer connects to pigyak.com:1626 through a local bridge. Names and game messages are sent to that legacy server. No Windows game executable or native plug-in is launched.</p>
+    <details open><summary>Test diagnostics <span id="count">0 events</span></summary>
+      <div class="diagnostic-actions"><button id="inspect">Inspect VM</button><button id="test3d">Test 3D startup</button><button id="traceworld">Trace world startup</button><button id="download">Download diagnostics</button><button id="clear">Clear view</button><label><input type="checkbox" id="legacy"> Legacy interpreter on next launch</label><label><input type="checkbox" id="terrain" checked> Browser compatibility fixes</label></div>
+      <details><summary>Lingo compatibility console</summary><label for="lingo">One expression or command per line (local VM)</label><textarea id="lingo" rows="5" style="display:block;width:100%;box-sizing:border-box"></textarea><button id="runlingo">Run Lingo</button></details>
+      <pre id="log" aria-label="Player diagnostic log">Launch the game to capture player output.</pre>
+    </details>
+    <footer><a href="/game/manifest.json" target="_blank" rel="noopener">Extraction manifest</a><span>Desktop keyboard + mouse · preserve the original feel</span></footer>
+  </main>
+</body>
+</html>
