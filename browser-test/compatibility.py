@@ -232,7 +232,8 @@ def adapt_console(script, names):
         buffer = encode(0x49, 2, names.index('browserConsole'))
         version_get = encode(0x49, 2, names.index('browserConsoleVersion'))
         version_set = encode(0x4f, 2, names.index('browserConsoleVersion'))
-        append = buffer + bytes.fromhex('4b004202') + encode(0x57, 1, names.index('add'))
+        # Keep the original TextColor with each line, after its default is set.
+        append = buffer + bytes.fromhex('4b004b0143021e4202') + encode(0x57, 1, names.index('add'))
         delete = buffer + bytes.fromhex('41014202') + encode(0x67, 2, names.index('deleteAt'))
         trim = (buffer + encode(0x61, 1, names.index('count')) + bytes.fromhex('416410') +
                 encode(0x55, 1, len(delete) + 2) + delete)
@@ -241,7 +242,7 @@ def adapt_console(script, names):
         struct.pack_into('>II', script, record + 4, len(adapted), len(script))
         script.extend(adapted)
         return {'handler': 'PrintToConsole', 'capacity': 100,
-                'change': 'Mirror game console strings in browserConsole with a monotonic sequence',
+                'change': 'Mirror game console text and original colors in browserConsole with a monotonic sequence',
                 'original_sha256': hashlib.sha256(code).hexdigest(),
                 'adapted_sha256': hashlib.sha256(adapted).hexdigest()}
     raise ValueError('PrintToConsole handler missing')

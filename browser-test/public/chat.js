@@ -2,32 +2,58 @@
 (() => {
   const panel = document.createElement('section');
   panel.id = 'browser-chat'; panel.hidden = true; panel.setAttribute('aria-label', 'Game chat');
-  panel.innerHTML = '<button id="chat-toggle" type="button" aria-expanded="false">Chat</button><div id="chat-body" hidden><div id="chat-lines" role="log" aria-live="polite" aria-label="Game messages"></div><form id="chat-form"><input id="chat-input" aria-label="Chat message" maxlength="200" autocomplete="off" placeholder="Message · Enter to send"><button type="submit">Send</button></form><p id="chat-status" role="status"></p></div>';
+  panel.innerHTML = '<div id="chat-lines" role="log" aria-live="polite" aria-label="Game messages"></div><form id="chat-form"><input id="chat-input" aria-label="Chat message" maxlength="200" autocomplete="off" spellcheck="false" placeholder="_"></form><p id="chat-status" role="status"></p>';
   document.body.append(panel);
-  const toggle = panel.querySelector('#chat-toggle'), body = panel.querySelector('#chat-body');
   const lines = panel.querySelector('#chat-lines'), input = panel.querySelector('#chat-input');
-  const status = panel.querySelector('#chat-status');
+  const status = panel.querySelector('#chat-status'), form = panel.querySelector('#chat-form');
   let lastSequence = 0, polling = false, sending = false;
   const history = [];
-  function openChat(focus = true) {
-    body.hidden = false; toggle.setAttribute('aria-expanded', 'true');
-    if (focus) input.focus();
+  function openChat() { input.focus(); }
+  function returnToGame() {
+    input.blur();
+    document.querySelector('canvas')?.closest('[tabindex]')?.focus();
   }
-  toggle.onclick = () => {
-    if (body.hidden) openChat();
-    else { body.hidden = true; toggle.setAttribute('aria-expanded', 'false'); document.querySelector('canvas')?.focus(); }
-  };
   for (const type of ['keydown','keyup','keypress']) panel.addEventListener(type, e => e.stopPropagation());
-  const form = panel.querySelector('#chat-form');
-  const send = form.querySelector('button');
-  // DirPlayer consumes document input defaults. Submit explicitly so its
-  // canvas event handlers cannot cancel the browser form's default action.
-  send.type = 'button';
-  send.addEventListener('click', sendMessage);
   input.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { e.preventDefault(); toggle.click(); }
+    if (e.key === 'Escape') { e.preventDefault(); returnToGame(); }
     if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
   });
+  // Like the original, begin typing directly over the world. Movement and
+  // modifier keys remain with the game until the player starts a message.
+  addEventListener('keydown', e => {
+    if (panel.hidden || panel.contains(e.target) || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+    if (e.key === 'Enter' || (e.key.length === 1 && e.key !== ' ')) {
+      e.preventDefault(); e.stopPropagation(); openChat();
+      if (e.key.length === 1 && input.value.length < input.maxLength) input.value += e.key;
+    }
+  }, true);
+  function colorValue(datum) {
+    const value = datum?.value || '';
+    const hex = value.match(/#?([0-9a-f]{6})(?![0-9a-f])/i);
+    if (hex) return `#${hex[1]}`;
+    const rgb = value.match(/(?:rgb|color)\D+(\d+)\D+(\d+)\D+(\d+)/i);
+    return rgb ? `rgb(${rgb.slice(1,4).map(Number).join(',')})` : '#fff';
+  }
+  function renderHistory() {
+    const fragment = document.createDocumentFragment();
+    for (const message of history.slice(-8)) {
+      const line = document.createElement('div'); line.textContent = message.text || '\u00a0';
+      line.style.color = message.color; fragment.append(line);
+    }
+    lines.replaceChildren(fragment);
+  }
+  function placeConsole() {
+    const camera = window.moonbaseGPU?.camera, canvas = camera?.canvas;
+    if (!canvas || !camera.viewport) return;
+    const bounds = canvas.getBoundingClientRect(), [left, bottom, width, height] = camera.viewport;
+    const scale = bounds.width / canvas.width;
+    // Director's ConsoleH = sprite(1).width / 2 - 241. Eight 16px lines
+    // sit above the original input line at stage height - 22.
+    panel.style.left = `${bounds.left + (left + Math.max(0, width / 2 - 241)) * scale}px`;
+    panel.style.top = `${bounds.top + (bottom + height - 150) * bounds.height / canvas.height}px`;
+    panel.style.width = `${Math.min(482, width)}px`;
+    panel.style.transform = `scale(${scale},${bounds.height / canvas.height})`;
+  }
   async function evaluate(source) {
     const result = JSON.parse(await window.__vm.mcp_eval_lingo(source));
     if (!result.success) throw new Error(result.error || 'Game expression failed');
@@ -42,6 +68,7 @@
       const active = state.movie_loaded && state.current_frame === 5 && new URLSearchParams(location.search).get('terrain') !== '0';
       panel.hidden = !active;
       if (!active || state.is_paused) return;
+      placeConsole();
       const read = window.moonbaseRead, globals = read.globals();
       const sequence = Number(globals.browserConsoleVersion?.value || 0);
       if (sequence < lastSequence) { history.length = 0; lastSequence = 0; }
@@ -49,12 +76,14 @@
         const messages = read.list(globals.browserConsole);
         const count = messages.length;
         const amount = Math.min(sequence - lastSequence, count);
-        for (let i = count - amount; i < count; i++) history.push(read.string(messages[i]));
+        for (let i = count - amount; i < count; i++) {
+          const entry = read.list(messages[i]);
+          history.push(entry.length ? {text:read.string(entry[0]), color:colorValue(entry[1])} : {text:read.string(messages[i]), color:'#fff'});
+        }
         lastSequence = sequence;
         status.textContent = '';
         history.splice(0, Math.max(0, history.length - 100));
-        lines.textContent = history.join('\n');
-        lines.scrollTop = lines.scrollHeight;
+        renderHistory();
       }
       // The original button toggles speech bubbles, whose text textures are
       // unsupported. Open the visible global console instead, retaining the
@@ -63,7 +92,7 @@
         await evaluate('set ChatBubbleMode to 0');
         openChat();
         await evaluate('set member("ChatMode").text to "Global Chat"');
-        status.textContent = 'Global chat · browser console';
+        status.textContent = '';
       }
     } catch (error) {
       status.textContent = error.message;
@@ -72,11 +101,12 @@
   form.addEventListener('submit', e => { e.preventDefault(); sendMessage(); });
   async function sendMessage() {
     const text = input.value.trim();
-    if (!text || sending) return;
+    if (sending) return;
+    if (!text) { returnToGame(); return; }
     sending = true;
-    status.textContent = 'Submitting to game…';
+    status.textContent = '';
     try {
-      if (polling) throw new Error('Chat is updating; press Send again.');
+      if (polling) throw new Error('Chat is updating; press Enter again.');
       if (text !== '/fps') {
         const globals = window.moonbaseRead.globals();
         const accepted = window.moonbaseRead.string(globals.TermsOfUse) === 'Accepted';
@@ -97,7 +127,7 @@
           await new Promise(resolve => setTimeout(resolve, 25));
           const game = window.moonbaseRead.inspect(window.moonbaseRead.globals().browserGameplay);
           if (window.moonbaseRead.string(game.properties?.TextInput) === '') {
-            input.value = ''; status.textContent = 'Submitted to game'; return;
+            input.value = ''; status.textContent = ''; returnToGame(); return;
           }
         }
       } finally { window.__vm.key_up('Enter', 13); }
