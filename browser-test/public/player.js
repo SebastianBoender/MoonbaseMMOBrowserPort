@@ -58,6 +58,22 @@
       return;
     }
     if (event.data.type === 'moonbase-lingo') {
+      if (String(event.data.source).trim() === '@physics') {
+        for (const handler of ['DrivePlayer', 'CheckCarFlipped', 'prepareFrame']) report('info', `Physics handler ${handler}: ${vm.mcp_decompile_handler(1,5,handler)}`);
+        // Observe live input and bodies while native keys remain on the game.
+        // This trace never changes input, velocities, or server state.
+        let samples = 0;
+        const trace = setInterval(async () => {
+          const values = {};
+          for (const expression of ['the controlDown + 0', 'browserGameplay.FrameMod + 0', 'moongravity + 0', 'sp.modelResource("RocketPack").emitter.loop + 0', ...['Walk', 'Car', 'Spring'].flatMap(body => [`havok.rigidBody("${body}").position`, `havok.rigidBody("${body}").linearVelocity`])]) {
+            try { values[expression] = JSON.parse(await vm.mcp_eval_lingo(expression)); }
+            catch (error) { values[expression] = serialize(error); }
+          }
+          report('info', `Physics sample ${++samples}: ${JSON.stringify(values)}`);
+          if (samples >= 40) clearInterval(trace);
+        }, 500);
+        return;
+      }
       for (const source of String(event.data.source || '').split('\n').filter(s => s.trim())) {
         try { report('info', `Lingo ${source}: ${await vm.mcp_eval_lingo(source)}`); }
         catch (error) { report('warn', `Lingo ${source}: ${serialize(error)}`); }
