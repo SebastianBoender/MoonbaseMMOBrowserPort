@@ -172,3 +172,6 @@ An old bordered chat with a Chat/Send button and literal `<DatumRef(...)>` lines
 ## Ubuntu deployment
 
 See [deploy/README.md](deploy/README.md) and run `./browser-test/deploy/deploy.sh root@YOUR_VPS_IP` from the project directory. The default domain is moonbasemmo.com. The installer replaces the authorized HMC frontend, configures automatic HTTPS through Caddy, and manages a loopback-only game/SMUS bridge through systemd. Production mode supports the HTTPS origin and disables shared browser logs; it does not install a replacement multiplayer backend.
+
+
+Mobile input verification: the 390px browser viewport exercised native name entry, a scaled Login tap, Enter Base, held movement, jetpack lift and a local `/fps` chat command. The 320px layout had no horizontal overflow; landscape fullscreen kept the pad beside the stage. Automated tests cover independent/same-key fingers, cancel/lost capture, mode restrictions, origin checks, focus/visibility cleanup and the input heartbeat timeout. Physical Android/iOS touch and software keyboards still need device testing. Run `node --test browser-test/tests/*.cjs` for input regressions.
